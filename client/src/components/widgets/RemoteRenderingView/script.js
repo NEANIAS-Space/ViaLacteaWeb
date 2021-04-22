@@ -20,6 +20,8 @@ export default {
       connected: false,
     };
   },
+
+
   created() {
     this.view = vtkRemoteView.newInstance({
       rpcWheelEvent: 'viewport.mouse.zoom.wheel',
@@ -28,6 +30,27 @@ export default {
     if (location.hostname.split('.')[0] === 'localhost') {
       this.view.setInteractiveRatio(1);
     }
+    //var viewStr=this.view.getViewStream;
+
+
+    //macro.get(publicAPI, model, ['viewId', 'size', 'fps', 'lastImageEvent']); - viewstr
+
+    //model.viewStream = viewStream;
+    //model.canvasView.setViewStream(model.viewStream);
+    /*
+
+macro.get(publicAPI, model, [
+    'container',
+    'viewStream',
+    'canvasView',
+    'interactor',
+    'interactorStyle',
+    'interactiveQuality',
+    'interactiveRatio',
+    'stillQuality',
+    'stillRatio',
+  ]);
+  */
     //var rend=this.view.getRenderer()
     //https://kitware.github.io/vtk-js/examples/Cone.html
     /*var inter=this.view.getInteractor();
@@ -51,11 +74,22 @@ export default {
     fpsMonitor.setRenderWindow(win);*/
 
   },
+updated() {
+    console.log("FPS updated");
+   // console.log(viewStr.getFps);
+},
   mounted() {
     this.view.setContainer(this.$el);
 
     window.addEventListener('resize', this.view.resize);
     this.connect();
+    var self = this;
+    //setInterval( function () {
+
+
+          //  console.log(self.view.getViewStream().getLastImageEvent());
+          //  }, 1000)
+    /**/
   },
   methods: {
     connect() {
@@ -65,13 +99,23 @@ export default {
         this.view.setSession(session);
         this.view.setViewId(this.viewId);
         this.connected = true;
+
         this.view.render();
+        console.log("FPS initial=");
+        console.log(this.view.getViewStream().getFps());
+
       }
     },
     handleClick(event) {
       this.onClick(event);
+       console.log("Clicked");
+    },
+    displayFPS() {
+        console.log(this.view.getViewStream().getFps());
     },
   },
+
+
   watch: {
     client() {
       this.connect();
@@ -82,6 +126,7 @@ export default {
       if (this.connected) {
         this.view.setViewId(id);
         this.view.render();
+        console.log("VIEw ID ");
       }
     },
     enablePicking(value) {
@@ -97,3 +142,6 @@ export default {
     this.view.delete();
   },
 };
+
+//RemoteRenderView.on('update', (event) => {
+//  displayFPS()})

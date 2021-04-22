@@ -1,18 +1,94 @@
+
 <v-app>
+
+
+
+
   <v-app-bar app shrink-on-scroll>
 
-    <span class="title">DataCube visualisation</span>
-    <v-spacer />
-
-    <v-switch
-      :class="$style.switch"
-      @click="$vuetify.theme.dark = !$vuetify.theme.dark"
-    />
 
 
+
+
+<v-dialog v-model="dialog" width="500">
+<template v-slot:activator="{ on, attrs }">
+<v-btn color="grey lighten-2" v-bind="attrs" v-on="on">
+           Set Coords
+         </v-btn>
+          </template>
+<v-card>
+          <v-card-title class="headline grey lighten-2">
+            Coordinates input
+          </v-card-title>
+          <v-divider></v-divider>
+
+
+<v-row>
+        <v-col cols="2">
+          <v-text-field
+            label="L"
+            :value="p1"
+             type="number"
+             max='10'
+             min='0'
+             @input="setP1"
+
+
+
+          ></v-text-field>
+        </v-col>
+
+
+
+
+        <v-col cols="2">
+          <v-text-field
+            label="B"
+            :value="p2"
+            type="number"
+            max='10'
+            min='0'
+            @input="setP2"
+
+          ></v-text-field>
+        </v-col>
+
+        <v-col cols="2">
+          <v-text-field
+            label="R"
+            :value="r1"
+            type="number"
+            max='4'
+            min='0'
+            @input="setR1"
+
+          ></v-text-field>
+        </v-col>
+      </v-row>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="hideDialogAndProceed">
+            Ok
+          </v-btn>
+          <v-btn color="primary" text @click="dialog=false">
+            Close
+          </v-btn>
+
+
+        </v-card-actions>
+          </v-card>
+ </v-dialog>
+  <v-spacer />
+  <v-switch
+    :class="$style.switch"
+    @click="$vuetify.theme.dark = !$vuetify.theme.dark"
+  />
+   <v-spacer />
 <div>
 Camera control
 <div>
+
 <v-btn-toggle v-model="toggle_one" mandatory>
 <v-btn
   :value="1"

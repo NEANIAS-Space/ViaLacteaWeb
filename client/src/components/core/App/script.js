@@ -13,6 +13,7 @@ export default {
   },
   data() {
     return {
+      dialog: true,
       logo,
       myImage: require('@/assets/OPEN_LOCAL.png'),
       items: [
@@ -28,6 +29,10 @@ export default {
       client: 'WS_CLIENT',
       busy: 'WS_BUSY',
       resolution: 'CONE_RESOLUTION',
+      p1:'CONE_P1',
+      p2:'CONE_P2',
+      r1:'CONE_R1',
+      r2:'CONE_R2',
     }),
   },
   methods: {
@@ -35,7 +40,18 @@ export default {
       setResolution: 'CONE_RESOLUTION_UPDATE',
       resetCamera: 'WS_RESET_CAMERA',
       connect: 'WS_CONNECT',
+      loadData:'CONE_XMLFITS_UPDATE',
+      setP1:'CONE_SETP1',
+      setP2:'CONE_SETP2',
+      setR1:'CONE_SETR1',
+
     }),
+    hideDialogAndProceed: function()
+    {
+        this.dialog=false;
+        this.loadData();
+    }
+
   },
   mounted() {
     this.connect();

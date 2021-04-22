@@ -47,7 +47,7 @@ export default {
       if (location.port === '8080') {
         // We suppose that we have dev server and that ParaView/VTK is running on port 1234
         //config.sessionURL = `ws://${location.hostname}:1234/ws`;
-              //config.sessionURL = `ws://192.168.1.49:1234/ws`;
+             // config.sessionURL = `ws://192.168.1.49:1234/ws`;
               config.sessionURL = `ws://visivo-server.oact.inaf.it:1234/ws`;
       }
 
@@ -107,6 +107,15 @@ export default {
           .catch(console.error);
       }
     },
+     //new for relaunching
+    WS_LOADURL({ state }) {
+        if (state.client) {
+          state.client
+            .getRemote()
+            .Cone.loadURL()
+            .catch(console.error);
+        }
+      },
     WS_UPDATE_RESOLUTION({ state }, resolution) {
       if (state.client) {
              var t0 = performance.now();
@@ -117,10 +126,21 @@ export default {
           .Cone.updateResolution(resolution)
           .catch(console.error);
                //clientToConnect.endBusy();
-              var t1 = performance.now();
-              console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
+             // var t1 = performance.now();
+            //  console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
       }
     },
+      WS_UPDATE_XMLFITS({ state }, res) {
+        if (state.client) {
+
+             // console.log("Start loading fitx with parameters2 " + res);
+
+          state.client
+            .getRemote()
+            .Cone.loadXMLFITS(res)
+            .catch(console.error);
+         }
+      },
     WS_RESET_CAMERA({ state }) {
       if (state.client) {
               console.log("Start")
