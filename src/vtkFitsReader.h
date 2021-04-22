@@ -28,6 +28,13 @@ public:
     static vtkFitsReader *New();
     vtkFitsReader();
     ~vtkFitsReader();
+    
+    //For downloading and parcing files
+    void GenerateVLKBUrl(std::string data);
+    void DownloadFile(std::string url,std::string outName);
+    void DownloadFITSFromUrl(std::string url);
+    void DownloadXMLFromUrl(std::string url);
+
 
     void SetFileName(std::string name);
     std::string GetFileName(){return filename;}
@@ -150,6 +157,9 @@ private:
     void ReadHeader();
     void printerror(int status); // from fitsio distribution
     double initSlice;
+    std::string m_fileToDownload;
+    
+    static size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream);
 };
 
 

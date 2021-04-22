@@ -22,34 +22,9 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/INSTALL/CFITSIO/lib)
 
 # Sources that are not vtkObjects
 set(LIB_SPECIAL
-    main.cpp
-     extendedglyph3d.cpp 
-     vtkellipse.cpp 
-     vtkextracthistogram.cpp 
-    #  vtklegendscaleactor.cpp 
-     libwcs/fitsfile.c 
-     libwcs/hget.c 
-     libwcs/fileutil.c 
-     libwcs/fitswcs.c 
-     libwcs/distort.c 
-     libwcs/hput.c 
-     libwcs/iget.c 
-     libwcs/imio.c 
-     libwcs/imhfile.c 
-     libwcs/dateutil.c 
-     libwcs/wcsinit.c 
-     libwcs/dsspos.c 
-     libwcs/wcs.c 
-     libwcs/wcstrig.c 
-     libwcs/wcscon.c 
-     libwcs/lin.c 
-     libwcs/platepos.c 
-     libwcs/tnxpos.c 
-     libwcs/wcslib.c 
-     libwcs/cel.c 
-     libwcs/proj.c 
-     libwcs/sph.c 
-     libwcs/worldpos.c
+    xml_procs.cpp
+    tinyxml2.cpp
+   
 )
 
 # Headers without a matching .cxx file are listed here
@@ -79,7 +54,7 @@ set_source_files_properties(${LIB_HDRS} ${LIB_SPECIAL}
 
 
   vtk_module_add_module(VTK::VIALACTEA
-     SOURCES ${LIB_SRCS}
+     SOURCES ${LIB_SRCS} ${LIB_SPECIAL}
      HEADERS ${LIB_SRC_HDRS} ${LIB_HDRS})
    vtk_module_link(VTK::VIALACTEA
      PRIVATE ${cfitsio} -lcurl )# ${curl} )

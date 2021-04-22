@@ -10,6 +10,14 @@
 #include "vtkPointData.h"
 #include <iostream>     // std::cout
 #include <sstream>
+#include <algorithm>
+#include "tinyxml2.h"
+#include <curl/curl.h>
+
+template <typename T>
+T clamp(const T& n, const T& lower, const T& upper) {
+  return std::max(lower, std::min(n, upper));
+}
 
 
 //vtkCxxRevisionMacro(vtkFitsReader, "$Revision: 1.1 $");
@@ -36,8 +44,266 @@ vtkFitsReader::vtkFitsReader()
     }
     
     this->is3D=false;
+    m_fileToDownload="xml_to_parse.xml";
 
 
+}
+//----------------------------------------------------------------------------
+void vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius)
+{
+    std::vector<std::string> strings;
+        std::istringstream fpoint(data);
+        std::string s;
+        float p[2];
+        getline(fpoint, s, ',');
+        p[0]=::atof(s.c_str()); //l_lineEdit
+        getline(fpoint, s, ',');
+        p[1]=::atof(s.c_str()); //b_lineEdit
+
+           // ui->glatLineEdit->setText(QString::number( pieces[1].toDouble(), 'f', 4 ));
+           // ui->glonLineEdit->setText(QString::number( pieces[0].toDouble(), 'f', 4 ));
+
+        
+        float r[2];
+        getline(fpoint, s, ',');
+        r[0]=::atof(s.c_str()); //dlLineEdit
+        getline(fpoint, s, ',');
+        r[1]=::atof(s.c_str()); //dbLineEdit
+        //bool isRadius=false;
+        r[0]=clamp<float>(r[0],0.0,4.0);
+        r[1]=clamp<float>(r[1],0.0,4.0);
+
+
+       //http://ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-1.0.2p/vlkb_search?l=10&b=0&r=0.1 
+
+        std::string vlkbUrl="http://ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-1.0.2p/"; //I guess it should be different, with some fille added to it
+        std::string urlString=vlkbUrl+"/vlkb_search?l="+std::to_string(p[0])+"&b="+std::to_string(p[1]);//+"&species="+species;
+           /* if(isRadius)
+            {
+                //urlString+="&r="+ui->r_lineEdit->text();
+            }
+            else
+                urlString+="&dl="+std::to_string(r[0])+"&db="+std::to_string(r[1]);
+
+            urlString+="&vl=-500000&vu=500000";
+*/
+         urlString+="&r="+std::to_string(r[0]);
+
+        DownloadXMLFromUrl(urlString);
+        std::cout<<"URL "<<urlString<<std::endl;
+        
+        //Start parsing xml from temp file m_fileToDownload
+        tinyxml2::XMLDocument doc(true,tinyxml2::COLLAPSE_WHITESPACE);
+        doc.LoadFile( m_fileToDownload.c_str());
+        //const char* species = doc.FirstChildElement( "results" )->FirstChildElement( "survey" )->FirstChildElement("Species")->GetText();;
+        //const char* overlap = doc.FirstChildElement( "results" )->FirstChildElement( "survey" )->FirstChildElement("datacube")->FirstChildElement("overlap")->FirstChildElement("code")->GetText();;
+        tinyxml2::XMLElement* pElement{ doc.FirstChildElement( "results" ) ->FirstChildElement( "survey" )};
+         
+         bool found=false;
+         while (!found)
+         {
+             const char* species =pElement->FirstChildElement("Species")->GetText();
+             std::string str_sp=std::string(species);
+                    std::string::iterator end_pos = std::remove(str_sp.begin(), str_sp.end(), ' ');
+                    str_sp.erase(end_pos, str_sp.end());
+             const char* overlap = pElement->FirstChildElement("datacube")->FirstChildElement("overlap")->FirstChildElement("code")->GetText();
+         std::cout<<"species "<<species<<std::endl;
+              std::cout<<"overlap "<<overlap<<std::endl;
+              
+              int ov= ::atoi(overlap);
+              
+              
+              
+            if((str_sp!="Continuum")&&(ov==3))
+            {
+        	found=true;
+        	std::cout<<"Proceed with downloading file"<<std::endl;
+        	}
+        	else
+        	    pElement = pElement->NextSiblingElement();
+        	
+        	if (pElement == nullptr || NULL) {
+        	    std::cout<<"No dataCube the old data would be kept"<<std::endl;
+        	    	
+        	    return ;
+        	    }
+        	}
+        	
+        	//if(!found) return;
+        	
+        const char* url = pElement->FirstChildElement("datacube")->FirstChildElement("Access")->FirstChildElement("URL")->GetText();;
+        //std::cout<<url<<std::endl;
+        //Cleaning url
+        
+        std::string str_u=std::string(url);
+        ///std::string::iterator end_pos_u = std::remove(str_u.begin(), str_u.end(), ' ');
+        //str_u.erase(end_pos_u, str_u.end());
+        //std::replace(str_u.begin(), str_u.end()," ","%20");
+        //str_u.replace(s.find("$name"), sizeof("$name") - 1, "Somename");
+        auto ps=str_u.find(" ");
+        while(ps!=std::string::npos){
+        str_u.replace(ps, 1, "%20");
+        ps=str_u.find(" ");
+    }
+        
+        std::cout<<str_u.c_str()<<std::endl;
+        DownloadXMLFromUrl(str_u.c_str());
+        
+        tinyxml2::XMLDocument doc2(true,tinyxml2::COLLAPSE_WHITESPACE);
+        doc2.LoadFile( m_fileToDownload.c_str());
+        const char* url2 = doc2.FirstChildElement( "results" )->FirstChildElement( "URL" )->GetText();
+        
+        //For some reason had to remove whitespace manually
+        std::string str=std::string(url2);
+        std::string::iterator end_pos = std::remove(str.begin(), str.end(), ' ');
+        str.erase(end_pos, str.end());
+        
+        std::cout<<str.c_str()<<std::endl;
+        
+        DownloadFITSFromUrl(str);
+        //urlString+="&pubdid="+std::to_string(r[0]); 
+        
+        //http://ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-1.0.2p/vlkb_cutout?l=10&b=0&r=0.1&pubdid=HOPS_G009.8-020.0-H2O-cube.fits_1&surveyname=HOPS&species=H2O&transition=6-1-6_5-2-3
+        
+    
+        
+
+       // after void VialacteaInitialQuery::finishedSlot(QNetworkReply* reply)
+       //         performs downloading from url and xml preprocessing
+
+        //OTHERS
+
+        //Query example
+        /*
+         * vq= new VialacteaInitialQuery(ui->fileNameLineEdit->text());
+         * vq= new VialacteaInitialQuery();
+
+    vq->setL(ui->glonLineEdit->text()); //i->l_lineEdit->setText(l);
+    vq->setB(ui->glatLineEdit->text()); //ui->b_lineEdit->setText(b.replace(" ",""));
+    if (ui->radiumLineEdit->text()!="")
+        vq->setR(ui->radiumLineEdit->text());
+        //isRadius=true;
+        // ui->r_lineEdit->setText(r);
+    else
+    {
+        vq->setDeltaRect(ui->dlLineEdit->text(),ui->dbLineEdit->text());
+        //isRadius=false;
+      //ui->dlLineEdit->setText(dl);
+    //ui->dbLineEdit->setText(db);
+
+    }
+
+    QList < QPair<QString, QString> > selectedSurvey;
+
+    QList<QCheckBox *> allButtons = ui->surveySelectorGroupBox->findChildren<QCheckBox *>();
+    for(int i = 0; i < allButtons.size(); ++i)
+    {
+        qDebug()<<"i: "<<i<<" "<<allButtons.at(i);
+
+        if(allButtons.at(i)->isChecked())
+        {
+
+
+            selectedSurvey.append(mapSurvey.value(i));
+        }
+    }
+
+    //connettere la banda selezionata
+    vq->setSpecies("Continuum");
+    vq->setSurveyname(selectedSurvey.at(0).first);
+    vq->setTransition(selectedSurvey.at(0).second);
+    vq->setSelectedSurveyMap(selectedSurvey);
+    vq->on_queryPushButton_clicked();
+         */
+
+        /*
+         * Access settings
+         * QSettings settings(m_sSettingsFile, QSettings::NativeFormat);
+
+    if (settings.value("vlkbtype", "public").toString()=="public")
+    {
+        qDebug()<<"public access to vlkb";
+        settings.setValue("vlkburl","http://ia2-vialactea.oats.inaf.it/libjnifitsdb-1.0.2p/");
+        settings.setValue("vlkbtableurl","http://ia2-vialactea.oats.inaf.it/vlkb/catalogues/tap");
+
+
+
+    }
+    else if (settings.value("vlkbtype", "public").toString()=="private")
+    {
+        qDebug()<<"private access to vlkb";
+
+
+        QString user= settings.value("vlkbuser", "").toString();
+        QString pass = settings.value("vlkbpass", "").toString();
+
+
+       // settings.setValue("vlkburl","http://"+user+":"+pass+"@ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-0.23.2/");
+      //  settings.setValue("vlkburl","http://"+user+":"+pass+"@ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-0.23.16/");
+        settings.setValue("vlkburl","http://"+user+":"+pass+"@ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-1.0.2/");
+        settings.setValue("vlkbtableurl","http://ia2-vialactea.oats.inaf.it:8080/vlkb");
+
+
+    }
+
+    if (settings.value("online",true) == true)
+    {
+        tilePath = settings.value("onlinetilepath", "http://visivo.oact.inaf.it/vialacteatiles/openlayers.html").toString();
+        ui->webView->load(QUrl(tilePath));
+
+    }
+    else
+    {
+       tilePath = settings.value("tilepath", "").toString();
+       ui->webView->load(QUrl::fromLocalFile(tilePath));
+
+    }
+         */
+
+
+
+
+
+}
+void vtkFitsReader::DownloadXMLFromUrl(std::string url)
+{
+    
+    DownloadFile(url,m_fileToDownload);
+    //TODO: parseXML here
+
+
+}
+
+void vtkFitsReader::DownloadFITSFromUrl(std::string url)
+{
+    std::string filename="temp.fits";
+    DownloadFile(url,filename);
+    SetFileName(filename);
+
+
+}
+//----------------------------------------------------------------------------
+size_t  vtkFitsReader::write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    size_t written = fwrite(ptr, size, nmemb, stream);
+    return written;
+}
+//----------------------------------------------------------------------------
+void vtkFitsReader::DownloadFile(std::string url,std::string outName)
+{
+CURL *curl;
+    FILE *fp;
+    CURLcode res;
+    curl = curl_easy_init();
+    if (curl) {
+        fp = fopen(outName.c_str(),"wb");
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        res = curl_easy_perform(curl);
+        /* always cleanup */
+        curl_easy_cleanup(curl);
+        fclose(fp);
+    }
 }
 
 //----------------------------------------------------------------------------

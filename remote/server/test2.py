@@ -32,7 +32,7 @@ renderWindowInteractor.GetInteractorStyle().SetCurrentStyleToTrackballCamera()
 
 fitsReader = vtk.vtkVialactea.vtkFitsUnstructuredReader()
 fitsReader.is3D=True;
-fitsReader.SetFileName("vlkb-merged_3D_2021-03-08_10-39-11_837561_16774-16805.fits");
+fitsReader.SetFileName("../../data/vlkb-merged_3D_2021-03-08_10-39-11_837561_16774-16805.fits");
 # fitsReader.GenerateVLKBUrl("0,0","2,2");
 fitsReader.Update();
 

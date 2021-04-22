@@ -16,6 +16,7 @@ import vtk.vtkVialactea
 class VtkCone(vtk_protocols.vtkWebProtocol):
     def __init__(self):
         self.cone = vtk.vtkMarchingCubes();
+        self.fitsReader = vtk.vtkVialactea.vtkFitsReader();
         self.rms=0.0;
         self.min=0.0;
         self.max=0.0;
@@ -27,10 +28,11 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
         renderer = renderWindow.GetRenderers().GetFirstRenderer()
         
         
-
-        fitsReader = vtk.vtkVialactea.vtkFitsReader()
+        fitsReader=self.fitsReader;
+        
         fitsReader.is3D=True;
-        fitsReader.SetFileName("../../data/vlkb-merged_3D_2021-03-08_10-39-11_837561_16774-16805.fits");
+        fitsReader.GenerateVLKBUrl("3, 0,0.1,0.1");
+        # fitsReader.SetFileName("../../data/vlkb-merged_3D_2021-03-08_10-39-11_837561_16774-16805.fits");
         fitsReader.CalculateRMS();
             
 
@@ -68,6 +70,34 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
         self.getApplication().InvokeEvent('UpdateEvent')
 
         return -1
+        
+    @exportRpc("vtk.cone.url")
+    def loadURL(self):
+        print("FitsReader callse");
+        self.fitsReader.GenerateVLKBUrl("9, 0,0.3,0.1");
+        self.fitsReader.CalculateRMS();
+        renderWindow = self.getView('-1')
+        # renderWindow.Modified() # either modified or render
+        renderer.ResetCamera()
+        renderWindow.Render()
+        self.getApplication().InvokeEvent('UpdateEvent')
+   
+    @exportRpc("vtk.cone.urlfits")
+    def loadXMLFITS(self,res):
+        print("FitsReader call with ");
+        # str_p=str(p1)+","+str(p2);
+        # str_r=str(r1)+","+str(r2);
+        print(res);
+       
+        
+        self.fitsReader.GenerateVLKBUrl(res);
+        self.fitsReader.CalculateRMS();
+        renderWindow = self.getView('-1')
+        # renderWindow.Modified() # either modified or render
+        renderer.ResetCamera()
+        renderWindow.Render()
+        self.getApplication().InvokeEvent('UpdateEvent')
+        # return self.resetCamera()
 
 
     @exportRpc("vtk.cone.resolution.update")
