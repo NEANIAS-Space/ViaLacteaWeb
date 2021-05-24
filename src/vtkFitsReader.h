@@ -30,7 +30,7 @@ public:
     ~vtkFitsReader();
     
     //For downloading and parcing files
-    void GenerateVLKBUrl(std::string data);
+    bool GenerateVLKBUrl(std::string data);
     void DownloadFile(std::string url,std::string outName);
     void DownloadFITSFromUrl(std::string url);
     void DownloadXMLFromUrl(std::string url);
@@ -47,6 +47,15 @@ public:
     
     bool is3D;
     void CalculateRMS();
+    void SetTempPath(std::string path)
+{
+    m_tempPath=path+"/";
+    std::cout<<"Temporary path "<< m_tempPath<<std::endl;
+    m_fileToDownload=m_tempPath+m_fileToDownload;
+    m_fitsFile=m_tempPath+m_fitsFile;
+    
+}
+    
     double GetSigma(){return sigma;}
     double GetRMS(){return rms;}
     double GetMedia(){return media;}
@@ -85,6 +94,8 @@ public:
     std::string getSpecies() {return species;};
     std::string getTransition() {return transition;};
     std::string getSurvey() {return survey;};
+    
+    std::string GetSurveysData(){return surveyData;};
 
     void setSpecies(std::string s) {species=s;};
     void setTransition(std::string s) {transition=s;};
@@ -158,8 +169,21 @@ private:
     void printerror(int status); // from fitsio distribution
     double initSlice;
     std::string m_fileToDownload;
+    std::string m_tempPath;
+    std::string m_fitsFile;
+    
     
     static size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream);
+    
+    std::string surveyData;
+    std::string CleanString(const char* species)
+    {
+        std::string str_sp=std::string(species);
+        std::string::iterator end_pos = std::remove(str_sp.begin(), str_sp.end(), ' ');
+        str_sp.erase(end_pos, str_sp.end());
+        return str_sp;
+                                               
+    }
 };
 
 

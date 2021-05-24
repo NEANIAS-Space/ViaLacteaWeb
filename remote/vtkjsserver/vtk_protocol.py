@@ -20,8 +20,11 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
         self.rms=0.0;
         self.min=0.0;
         self.max=0.0;
-        
+        self.path=" ";
 
+    def SetPath(self,path):
+        self.path=path;
+        print(path);
     @exportRpc("vtk.initialize")
     def createVisualization(self):
         renderWindow = self.getView('-1')
@@ -29,12 +32,12 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
         
         
         fitsReader=self.fitsReader;
-        
+        fitsReader.SetTempPath(self.path)
         fitsReader.is3D=True;
         fitsReader.GenerateVLKBUrl("3, 0,0.1,0.1");
         # fitsReader.SetFileName("../../data/vlkb-merged_3D_2021-03-08_10-39-11_837561_16774-16805.fits");
         fitsReader.CalculateRMS();
-            
+        
 
         self.max=fitsReader.GetMax();
         self.min=fitsReader.GetMin();
@@ -90,14 +93,16 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
         print(res);
        
         
-        self.fitsReader.GenerateVLKBUrl(res);
+        result_success=self.fitsReader.GenerateVLKBUrl(res);
+        result=self.fitsReader.GetSurveysData();
         self.fitsReader.CalculateRMS();
         renderWindow = self.getView('-1')
         # renderWindow.Modified() # either modified or render
-        renderer.ResetCamera()
-        renderWindow.Render()
-        self.getApplication().InvokeEvent('UpdateEvent')
-        # return self.resetCamera()
+        #renderer.ResetCamera()
+        #renderWindow.Render()
+        #self.getApplication().InvokeEvent('UpdateEvent')
+        print(result_success); #just for binary success/failure
+        return result;
 
 
     @exportRpc("vtk.cone.resolution.update")

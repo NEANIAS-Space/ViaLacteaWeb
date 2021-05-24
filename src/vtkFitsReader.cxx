@@ -45,11 +45,17 @@ vtkFitsReader::vtkFitsReader()
     
     this->is3D=false;
     m_fileToDownload="xml_to_parse.xml";
+    m_fitsFile="temp.fits";
+    m_tempPath="./";
+    
+    surveyData="";
+    
+    //m_fileToDownload=m_tempPath+m_fileToDownload;
 
 
 }
 //----------------------------------------------------------------------------
-void vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius)
+bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius)
 {
     std::vector<std::string> strings;
         std::istringstream fpoint(data);
@@ -94,7 +100,14 @@ void vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
         
         //Start parsing xml from temp file m_fileToDownload
         tinyxml2::XMLDocument doc(true,tinyxml2::COLLAPSE_WHITESPACE);
-        doc.LoadFile( m_fileToDownload.c_str());
+       
+        std::cout<<"we download "<<m_fileToDownload<<std::endl;
+        tinyxml2::XMLError eResult = doc.LoadFile(m_fileToDownload.c_str());
+        
+        if (eResult != tinyxml2::XML_SUCCESS) 
+            std::cout<<"XML not found"<<std::endl;
+        else
+            std::cout<<"XML downloaded"<<std::endl;
         //const char* species = doc.FirstChildElement( "results" )->FirstChildElement( "survey" )->FirstChildElement("Species")->GetText();;
         //const char* overlap = doc.FirstChildElement( "results" )->FirstChildElement( "survey" )->FirstChildElement("datacube")->FirstChildElement("overlap")->FirstChildElement("code")->GetText();;
         tinyxml2::XMLElement* pElement{ doc.FirstChildElement( "results" ) ->FirstChildElement( "survey" )};
@@ -114,7 +127,7 @@ void vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
               
               
               
-            if((str_sp!="Continuum")&&(ov==3))
+            if(str_sp!="Continuum") //&&(ov==3))
             {
         	found=true;
         	std::cout<<"Proceed with downloading file"<<std::endl;
@@ -125,7 +138,7 @@ void vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
         	if (pElement == nullptr || NULL) {
         	    std::cout<<"No dataCube the old data would be kept"<<std::endl;
         	    	
-        	    return ;
+        	    return false;
         	    }
         	}
         	
@@ -161,109 +174,96 @@ void vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
         std::cout<<str.c_str()<<std::endl;
         
         DownloadFITSFromUrl(str);
-        //urlString+="&pubdid="+std::to_string(r[0]); 
         
-        //http://ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-1.0.2p/vlkb_cutout?l=10&b=0&r=0.1&pubdid=HOPS_G009.8-020.0-H2O-cube.fits_1&surveyname=HOPS&species=H2O&transition=6-1-6_5-2-3
         
-    
+        //Proceed with forming the survey string
+        //surveyData="";
+        /*{
+            "survey": 4,
+            "overlap": "Sydney",
+            "url": "lc",
+            
+          },
+          {
+            "survey": 4,
+                      "overlap": "Sydney",
+                      "url": "lc",
+          }
+        ]
+        */
+        surveyData="[\n";
         
-
-       // after void VialacteaInitialQuery::finishedSlot(QNetworkReply* reply)
-       //         performs downloading from url and xml preprocessing
-
-        //OTHERS
-
-        //Query example
-        /*
-         * vq= new VialacteaInitialQuery(ui->fileNameLineEdit->text());
-         * vq= new VialacteaInitialQuery();
-
-    vq->setL(ui->glonLineEdit->text()); //i->l_lineEdit->setText(l);
-    vq->setB(ui->glatLineEdit->text()); //ui->b_lineEdit->setText(b.replace(" ",""));
-    if (ui->radiumLineEdit->text()!="")
-        vq->setR(ui->radiumLineEdit->text());
-        //isRadius=true;
-        // ui->r_lineEdit->setText(r);
-    else
-    {
-        vq->setDeltaRect(ui->dlLineEdit->text(),ui->dbLineEdit->text());
-        //isRadius=false;
-      //ui->dlLineEdit->setText(dl);
-    //ui->dbLineEdit->setText(db);
-
-    }
-
-    QList < QPair<QString, QString> > selectedSurvey;
-
-    QList<QCheckBox *> allButtons = ui->surveySelectorGroupBox->findChildren<QCheckBox *>();
-    for(int i = 0; i < allButtons.size(); ++i)
-    {
-        qDebug()<<"i: "<<i<<" "<<allButtons.at(i);
-
-        if(allButtons.at(i)->isChecked())
-        {
-
-
-            selectedSurvey.append(mapSurvey.value(i));
-        }
-    }
-
-    //connettere la banda selezionata
-    vq->setSpecies("Continuum");
-    vq->setSurveyname(selectedSurvey.at(0).first);
-    vq->setTransition(selectedSurvey.at(0).second);
-    vq->setSelectedSurveyMap(selectedSurvey);
-    vq->on_queryPushButton_clicked();
-         */
-
-        /*
-         * Access settings
-         * QSettings settings(m_sSettingsFile, QSettings::NativeFormat);
-
-    if (settings.value("vlkbtype", "public").toString()=="public")
-    {
-        qDebug()<<"public access to vlkb";
-        settings.setValue("vlkburl","http://ia2-vialactea.oats.inaf.it/libjnifitsdb-1.0.2p/");
-        settings.setValue("vlkbtableurl","http://ia2-vialactea.oats.inaf.it/vlkb/catalogues/tap");
-
-
-
-    }
-    else if (settings.value("vlkbtype", "public").toString()=="private")
-    {
-        qDebug()<<"private access to vlkb";
-
-
-        QString user= settings.value("vlkbuser", "").toString();
-        QString pass = settings.value("vlkbpass", "").toString();
-
-
-       // settings.setValue("vlkburl","http://"+user+":"+pass+"@ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-0.23.2/");
-      //  settings.setValue("vlkburl","http://"+user+":"+pass+"@ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-0.23.16/");
-        settings.setValue("vlkburl","http://"+user+":"+pass+"@ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-1.0.2/");
-        settings.setValue("vlkbtableurl","http://ia2-vialactea.oats.inaf.it:8080/vlkb");
-
-
-    }
-
-    if (settings.value("online",true) == true)
-    {
-        tilePath = settings.value("onlinetilepath", "http://visivo.oact.inaf.it/vialacteatiles/openlayers.html").toString();
-        ui->webView->load(QUrl(tilePath));
-
-    }
-    else
-    {
-       tilePath = settings.value("tilepath", "").toString();
-       ui->webView->load(QUrl::fromLocalFile(tilePath));
-
-    }
-         */
-
-
-
-
-
+        tinyxml2::XMLElement* element{ doc.FirstChildElement( "results" ) ->FirstChildElement( "survey" )};
+        	while (element != nullptr || NULL)
+        	    {
+        const char* species =element->FirstChildElement("Species")->GetText();
+             
+               
+                  
+                std::cout<<"species "<<species<<std::endl;
+                //std::cout<<"overlap "<<overlap<<std::endl;
+                     
+                std::string str_sp=CleanString(species);
+                     
+                     
+                     
+                   if(str_sp!="Continuum") //&&(ov==3))
+                   {
+                       if(surveyData=="[\n") //first one
+                       surveyData+="{\n";
+                       else
+                           surveyData+=",\n{\n";
+                       
+                       surveyData+="\"survey\":";
+                       //fill surveyData
+                       //Species
+                       //overlap description
+                       //overlap code
+                       //access URL type="cutout"
+                       const char* survey =element->FirstChildElement("Survey")->GetText();
+                       str_sp+=" "+std::string(survey);
+                       surveyData=surveyData+"\""+str_sp+"\"";
+                       surveyData+=",\n";
+                       const char* transition = element->FirstChildElement("Transition")->GetText();
+                       
+                       tinyxml2::XMLElement * datacube  = element->FirstChildElement("datacube");
+                       
+                     //  while (datacube != nullptr || NULL) {
+                       //check several datacubes  mosaic type
+                       const char* overlap_desc = datacube->FirstChildElement("overlap")->FirstChildElement("description")->GetText();
+                       std::string str_desc=std::string(transition);
+                       if(std::string(overlap_desc)=="The datacube Region is completely inside the input Region.")
+                           str_desc+=" Full Overlap";
+                           else
+                           str_desc+=" Partial Overlap";
+                       surveyData+="\"overlap\":";
+                       surveyData=surveyData+"\""+str_desc+"\"";
+                       surveyData+=",\n";
+                       
+                       std::string url_cutout="";
+                       tinyxml2::XMLElement * node  = datacube->FirstChildElement("Access")->FirstChildElement("URL");
+                       if (node->Attribute("type", "cutout"))
+                       {
+                                          //get url for xml
+                           url_cutout=std::string(node->GetText());
+                       }
+                       //form the survey json
+                       surveyData+="\"url\": ";
+                       surveyData=surveyData+"\""+url_cutout+"\"";
+                       surveyData+="\n }";
+                       
+                      // datacube = datacube->NextSiblingElement();
+                      // }
+                       // std::cout<<surveyData<<std::endl;        
+                   }
+                      element = element->NextSiblingElement();
+                       	
+                       
+                   }
+                   surveyData+="]";
+                   //std::cout<<surveyData<<std::endl;
+        
+    return true;
 }
 void vtkFitsReader::DownloadXMLFromUrl(std::string url)
 {
@@ -276,9 +276,9 @@ void vtkFitsReader::DownloadXMLFromUrl(std::string url)
 
 void vtkFitsReader::DownloadFITSFromUrl(std::string url)
 {
-    std::string filename="temp.fits";
-    DownloadFile(url,filename);
-    SetFileName(filename);
+   
+    DownloadFile(url,m_fitsFile);
+    SetFileName(m_fitsFile);
 
 
 }
