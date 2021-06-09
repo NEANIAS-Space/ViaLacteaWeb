@@ -14,11 +14,9 @@
 #include <curl/curl.h>
 
 
-template<class T>
-constexpr const T& clamp( const T& v, const T& lo, const T& hi )
-{
-    assert( !(hi < lo) );
-    return (v < lo) ? lo : (hi < v) ? hi : v;
+template <typename T>
+T clamp(const T& n, const T& lower, const T& upper) {
+  return std::max(lower, std::min(n, upper));
 }
 
 //vtkCxxRevisionMacro(vtkFitsUnstructuredReader, "$Revision: 1.1 $");

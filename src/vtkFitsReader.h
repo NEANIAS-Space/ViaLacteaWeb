@@ -31,6 +31,8 @@ public:
     
     //For downloading and parcing files
     bool GenerateVLKBUrl(std::string data);
+    void DownloadSurveyDataCube(std::string urlString);
+    
     void DownloadFile(std::string url,std::string outName);
     void DownloadFITSFromUrl(std::string url);
     void DownloadXMLFromUrl(std::string url);
@@ -60,7 +62,9 @@ public:
     double GetRMS(){return rms;}
     double GetMedia(){return media;}
     long GetEntries(){return npix;}
-    float* GetRangeSlice(int i);
+    double* GetRangeSlice(int i);
+    double GetRangeSliceMin(int i){return minmaxslice[i][0];};
+    double GetRangeSliceMax(int i){return minmaxslice[i][1];};
 
     float GetMin(){return datamin;}
     float GetMax(){return datamax;}
@@ -121,7 +125,7 @@ protected:
     long npix=0;
     long naxes[3];
 
-    float **minmaxslice;
+    double **minmaxslice;
 
     // Description:
     // This is called by the superclass.

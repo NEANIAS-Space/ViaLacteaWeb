@@ -54,6 +54,24 @@ vtkFitsReader::vtkFitsReader()
 
 
 }
+void vtkFitsReader::DownloadSurveyDataCube(std::string str_u)
+{
+    
+        DownloadXMLFromUrl(str_u.c_str());
+        
+        tinyxml2::XMLDocument doc2(true,tinyxml2::COLLAPSE_WHITESPACE);
+        doc2.LoadFile( m_fileToDownload.c_str());
+        const char* url2 = doc2.FirstChildElement( "results" )->FirstChildElement( "URL" )->GetText();
+        
+        //For some reason had to remove whitespace manually
+        std::string str=std::string(url2);
+        std::string::iterator end_pos = std::remove(str.begin(), str.end(), ' ');
+        str.erase(end_pos, str.end());
+        
+        std::cout<<str.c_str()<<std::endl;
+        
+        DownloadFITSFromUrl(str);
+}
 //----------------------------------------------------------------------------
 bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius)
 {
@@ -63,21 +81,28 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
         float p[2];
         getline(fpoint, s, ',');
         p[0]=::atof(s.c_str()); //l_lineEdit
+        p[0]=clamp<float>(p[0],-180.0,180.0);
         getline(fpoint, s, ',');
         p[1]=::atof(s.c_str()); //b_lineEdit
+        p[1]=clamp<float>(p[1],-3.0,3.0);
 
            // ui->glatLineEdit->setText(QString::number( pieces[1].toDouble(), 'f', 4 ));
            // ui->glonLineEdit->setText(QString::number( pieces[0].toDouble(), 'f', 4 ));
 
         
-        float r[2];
+        float r,dl,db;
         getline(fpoint, s, ',');
-        r[0]=::atof(s.c_str()); //dlLineEdit
+        r=::atof(s.c_str()); //dlLineEdit
         getline(fpoint, s, ',');
-        r[1]=::atof(s.c_str()); //dbLineEdit
+        dl=::atof(s.c_str()); //dbLineEdit
+        getline(fpoint, s, ',');
+        db=::atof(s.c_str()); //dbLineEdit
         //bool isRadius=false;
-        r[0]=clamp<float>(r[0],0.0,4.0);
-        r[1]=clamp<float>(r[1],0.0,4.0);
+        r=clamp<float>(r,0.0,2.0);
+        dl=clamp<float>(dl,0.0,2.0);
+        db=clamp<float>(db,0.0,2.0);
+        
+        //r[1]=clamp<float>(r[1],0.0,4.0);
 
 
        //http://ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-1.0.2p/vlkb_search?l=10&b=0&r=0.1 
@@ -93,87 +118,87 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
 
             urlString+="&vl=-500000&vu=500000";
 */
-         urlString+="&r="+std::to_string(r[0]);
-
+         if (r!=0.0) {
+             urlString+="&r="+std::to_string(r);
+         } else{
+             urlString+="&dl="+std::to_string(dl);
+             urlString+="&db="+std::to_string(db);
+         }
+        
         DownloadXMLFromUrl(urlString);
-        std::cout<<"URL "<<urlString<<std::endl;
+            std::cout<<"URL "<<urlString<<std::endl;
+            
+            //Start parsing xml from temp file m_fileToDownload
+            tinyxml2::XMLDocument doc(true,tinyxml2::COLLAPSE_WHITESPACE);
+           
+            std::cout<<"we download "<<m_fileToDownload<<std::endl;
+            tinyxml2::XMLError eResult = doc.LoadFile(m_fileToDownload.c_str());
+            
+            if (eResult != tinyxml2::XML_SUCCESS) 
+                std::cout<<"XML not found"<<std::endl;
+            else
+                std::cout<<"XML downloaded"<<std::endl;
+            //const char* species = doc.FirstChildElement( "results" )->FirstChildElement( "survey" )->FirstChildElement("Species")->GetText();;
+            //const char* overlap = doc.FirstChildElement( "results" )->FirstChildElement( "survey" )->FirstChildElement("datacube")->FirstChildElement("overlap")->FirstChildElement("code")->GetText();;
+            tinyxml2::XMLElement* pElement{ doc.FirstChildElement( "results" ) ->FirstChildElement( "survey" )};
+             
+             bool found=false;
+             while (!found)
+             {
+                 const char* species =pElement->FirstChildElement("Species")->GetText();
+                 std::string str_sp=std::string(species);
+                        std::string::iterator end_pos = std::remove(str_sp.begin(), str_sp.end(), ' ');
+                        str_sp.erase(end_pos, str_sp.end());
+                 const char* overlap = pElement->FirstChildElement("datacube")->FirstChildElement("overlap")->FirstChildElement("code")->GetText();
+             std::cout<<"species "<<species<<std::endl;
+                  std::cout<<"overlap "<<overlap<<std::endl;
+                  
+                  int ov= ::atoi(overlap);
+                  
+                  
+                  
+                if(str_sp!="Continuum") //&&(ov==3))
+                {
+            	found=true;
+            	std::cout<<"Proceed with downloading file"<<std::endl;
+            	}
+            	else
+            	    pElement = pElement->NextSiblingElement();
+            	
+            	if (pElement == nullptr || NULL) {
+            	    std::cout<<"No dataCube the old data would be kept"<<std::endl;
+            	    	
+            	    return false;
+            	    }
+            	}
+            	
+            	//if(!found) return;
+            	
+            const char* url = pElement->FirstChildElement("datacube")->FirstChildElement("Access")->FirstChildElement("URL")->GetText();;
+            
+            //Cleaning url
+            
+            std::string str_u=std::string(url);
+            ///std::string::iterator end_pos_u = std::remove(str_u.begin(), str_u.end(), ' ');
+            //str_u.erase(end_pos_u, str_u.end());
+            //std::replace(str_u.begin(), str_u.end()," ","%20");
+            //str_u.replace(s.find("$name"), sizeof("$name") - 1, "Somename");
+            auto ps=str_u.find(" ");
+            while(ps!=std::string::npos){
+            str_u.replace(ps, 1, "%20");
+            ps=str_u.find(" ");
+        }
+            ps=str_u.find("+");
+                while(ps!=std::string::npos){
+                str_u.replace(ps, 1, "%2B");
+                ps=str_u.find("+");
+            }
+            
+            
+            std::cout<<str_u.c_str()<<std::endl;
+            
+        DownloadSurveyDataCube(str_u);
         
-        //Start parsing xml from temp file m_fileToDownload
-        tinyxml2::XMLDocument doc(true,tinyxml2::COLLAPSE_WHITESPACE);
-       
-        std::cout<<"we download "<<m_fileToDownload<<std::endl;
-        tinyxml2::XMLError eResult = doc.LoadFile(m_fileToDownload.c_str());
-        
-        if (eResult != tinyxml2::XML_SUCCESS) 
-            std::cout<<"XML not found"<<std::endl;
-        else
-            std::cout<<"XML downloaded"<<std::endl;
-        //const char* species = doc.FirstChildElement( "results" )->FirstChildElement( "survey" )->FirstChildElement("Species")->GetText();;
-        //const char* overlap = doc.FirstChildElement( "results" )->FirstChildElement( "survey" )->FirstChildElement("datacube")->FirstChildElement("overlap")->FirstChildElement("code")->GetText();;
-        tinyxml2::XMLElement* pElement{ doc.FirstChildElement( "results" ) ->FirstChildElement( "survey" )};
-         
-         bool found=false;
-         while (!found)
-         {
-             const char* species =pElement->FirstChildElement("Species")->GetText();
-             std::string str_sp=std::string(species);
-                    std::string::iterator end_pos = std::remove(str_sp.begin(), str_sp.end(), ' ');
-                    str_sp.erase(end_pos, str_sp.end());
-             const char* overlap = pElement->FirstChildElement("datacube")->FirstChildElement("overlap")->FirstChildElement("code")->GetText();
-         std::cout<<"species "<<species<<std::endl;
-              std::cout<<"overlap "<<overlap<<std::endl;
-              
-              int ov= ::atoi(overlap);
-              
-              
-              
-            if(str_sp!="Continuum") //&&(ov==3))
-            {
-        	found=true;
-        	std::cout<<"Proceed with downloading file"<<std::endl;
-        	}
-        	else
-        	    pElement = pElement->NextSiblingElement();
-        	
-        	if (pElement == nullptr || NULL) {
-        	    std::cout<<"No dataCube the old data would be kept"<<std::endl;
-        	    	
-        	    return false;
-        	    }
-        	}
-        	
-        	//if(!found) return;
-        	
-        const char* url = pElement->FirstChildElement("datacube")->FirstChildElement("Access")->FirstChildElement("URL")->GetText();;
-        //std::cout<<url<<std::endl;
-        //Cleaning url
-        
-        std::string str_u=std::string(url);
-        ///std::string::iterator end_pos_u = std::remove(str_u.begin(), str_u.end(), ' ');
-        //str_u.erase(end_pos_u, str_u.end());
-        //std::replace(str_u.begin(), str_u.end()," ","%20");
-        //str_u.replace(s.find("$name"), sizeof("$name") - 1, "Somename");
-        auto ps=str_u.find(" ");
-        while(ps!=std::string::npos){
-        str_u.replace(ps, 1, "%20");
-        ps=str_u.find(" ");
-    }
-        
-        std::cout<<str_u.c_str()<<std::endl;
-        DownloadXMLFromUrl(str_u.c_str());
-        
-        tinyxml2::XMLDocument doc2(true,tinyxml2::COLLAPSE_WHITESPACE);
-        doc2.LoadFile( m_fileToDownload.c_str());
-        const char* url2 = doc2.FirstChildElement( "results" )->FirstChildElement( "URL" )->GetText();
-        
-        //For some reason had to remove whitespace manually
-        std::string str=std::string(url2);
-        std::string::iterator end_pos = std::remove(str.begin(), str.end(), ' ');
-        str.erase(end_pos, str.end());
-        
-        std::cout<<str.c_str()<<std::endl;
-        
-        DownloadFITSFromUrl(str);
         
         
         //Proceed with forming the survey string
@@ -200,15 +225,21 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
              
                
                   
-                std::cout<<"species "<<species<<std::endl;
+               
                 //std::cout<<"overlap "<<overlap<<std::endl;
                      
                 std::string str_sp=CleanString(species);
+                std::string str2 ("Continuum");
+                     
+                     // different member versions of find in the same order as above:
+                     std::size_t found = str_sp.find(str2);
+                    
                      
                      
                      
-                   if(str_sp!="Continuum") //&&(ov==3))
+                   if (found==std::string::npos) // if(str_sp!="Continuum") //&&(ov==3))
                    {
+                       std::cout<<"species "<<species<<std::endl;
                        if(surveyData=="[\n") //first one
                        surveyData+="{\n";
                        else
@@ -246,6 +277,16 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
                        {
                                           //get url for xml
                            url_cutout=std::string(node->GetText());
+                           auto ps=url_cutout.find(" ");
+                                      while(ps!=std::string::npos){
+                                      url_cutout.replace(ps, 1, "%20");
+                                      ps=url_cutout.find(" ");
+                                  }
+                                      ps=url_cutout.find("+");
+                                          while(ps!=std::string::npos){
+                                          url_cutout.replace(ps, 1, "%2B");
+                                          ps=url_cutout.find("+");
+                                      }
                        }
                        //form the survey json
                        surveyData+="\"url\": ";
@@ -254,7 +295,8 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
                        
                       // datacube = datacube->NextSiblingElement();
                       // }
-                       // std::cout<<surveyData<<std::endl;        
+                       // std::cout<<surveyData<<std::endl;
+                       std::cout<<"filled data for "<<species<<std::endl;
                    }
                       element = element->NextSiblingElement();
                        	
@@ -838,11 +880,11 @@ void vtkFitsReader::CalculateRMS() {
 
 
 
-    minmaxslice=new float*[naxes[2]];
+    minmaxslice=new double*[naxes[2]];
     for(int i=0;i< naxes[2];i++)
     {
 
-        minmaxslice[i] = new float[2];
+        minmaxslice[i] = new double[2];
 
         minmaxslice[i][0]= 1.0E30;
         minmaxslice[i][1]= -1.0E30;
@@ -925,7 +967,7 @@ void vtkFitsReader::CalculateRMS() {
         printerror( status );
     
     output->GetPointData()->SetScalars(scalars);
-
+    std::cout<<minmaxslice[0][0] <<minmaxslice[0][1]<<std::endl;
     return;
 }
 int vtkFitsReader::GetNaxes(int i)
@@ -934,7 +976,7 @@ int vtkFitsReader::GetNaxes(int i)
     return naxes[i];
 
 }
-float* vtkFitsReader::GetRangeSlice(int i)
+double* vtkFitsReader::GetRangeSlice(int i)
 {
 
     return minmaxslice[i];
