@@ -98,7 +98,7 @@ class _Server(vtk_wslink.ServerProtocol):
             renderWindowInteractor = vtk.vtkRenderWindowInteractor()
             renderWindowInteractor.SetRenderWindow(renderWindow)
             
-            renderWindowInteractor.GetInteractorStyle().SetCurrentStyleToMultiTouchCamera()#SetCurrentStyleToTrackballCamera()
+            #renderWindowInteractor.GetInteractorStyle().SetCurrentStyleToMultiTouchCamera()#SetCurrentStyleToTrackballCamera()
             #renderWindowInteractor.GetInteractorStyle().AutoAdjustCameraClippingRangeOn();
             renderWindowInteractor.EnableRenderOff()
             self.getApplication().GetObjectIdMap().SetActiveObject("VIEW", renderWindow)
@@ -110,16 +110,20 @@ class _Server(vtk_wslink.ServerProtocol):
 if __name__ == "__main__":
     # Create argument parser
     parser = argparse.ArgumentParser(description="ViaLactea datacube")
-   
-
+    parser.add_argument("--updir", help="directory for temp files",type=str)
+    parser.add_argument("--session", type=str)
     # Add arguments
     server.add_arguments(parser)
     _Server.add_arguments(parser)
     args = parser.parse_args()
-    # print("Directoy to upload");
-    # print(args.upload-directory)
-    
+    print("Directoy to upload");
+
+    print(args.updir)
+    print(args.session)
     _Server.configure(args)
 
     # Start server
     server.start_webserver(options=args, protocol=_Server, disableLogging=True)
+~                                                                               
+
+

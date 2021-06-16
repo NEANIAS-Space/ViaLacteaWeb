@@ -22,6 +22,12 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
         self.max=0.0;
         self.imageViewer = vtk.vtkImageViewer2();
         self.viewer  =vtk.vtkResliceImageViewer();
+        self.sliceA = vtk.vtkActor();
+        self.sliceE= vtk.vtkPlanes();
+        self.frustumSource = vtk.vtkFrustumSource();
+        self.fp = [0.0 for i in range(3)]
+        self.pos = [0.0 for i in range(3)]
+        self.zoom=1.0;
         
     def updateScene(self, renderer, renWin):
       renderer.ResetCamera();
@@ -85,27 +91,27 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
         
         #first pipeline
         #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1428
-        sliceE= vtk.vtkPlanes();
+        
         fits=fitsReader.GetOutput();
         bounds=fits.GetBounds()
         
-        sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
-        frustumSource = vtk.vtkFrustumSource();
-        frustumSource.ShowLinesOff();
-        frustumSource.SetPlanes(sliceE);
-        frustumSource.Update();
-        frustum = frustumSource.GetOutput();
+        self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
+       
+        self.frustumSource.ShowLinesOff();
+        self.frustumSource.SetPlanes(self.sliceE);
+        self.frustumSource.Update();
+        
         
         mapper2 = vtk.vtkPolyDataMapper();
-        mapper2.SetInputData(frustum);
-        sliceA = vtk.vtkActor();
-        sliceA.SetMapper(mapper2);
+        mapper2.SetInputData(self.frustumSource.GetOutput());
+       
+        self.sliceA.SetMapper(mapper2);
         
         
        
         
         
-        renderer.AddActor(sliceA)
+        renderer.AddActor(self.sliceA)
         renderer.AddActor(shellA)
         renderer.AddActor(outlineA)
         
@@ -224,6 +230,31 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
 
         return self.resetCamera()
 
+    def ResetCam():
+        renderWindow = self.getView('-1')
+        rends=renderWindow.GetRenderers()
+        
+        renderer = rends.GetItemAsObject(0)
+        renderer2 = rends.GetItemAsObject(1)	
+        renderer.ResetCamera()
+        renderer2.ResetCamera()
+        renderWindow.Render()
+
+    @exportRpc("vtk.cone.fits.update")
+    def updateFits(self,url):
+        
+        self.fitsReader.DownloadSurveyDataCube(url);
+        result= self.fitsReader.CalculateRMS();
+        
+        fits=self.fitsReader.GetOutput();
+        bounds=fits.GetBounds()
+        
+        self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
+        self.frustumSource.Update()
+        #print("Slice updated")
+        #self.ResetCamera()
+        #print("Slice updated")
+
 
     @exportRpc("vtk.camera.reset")
     def resetCamera(self):
@@ -249,7 +280,7 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
    
     @exportRpc("vtk.cone.urlfits")
     def loadXMLFITS(self,res):
-        print("FitsReader call with ");
+        print("FitsReader update call with ");
         # str_p=str(p1)+","+str(p2);
         # str_r=str(r1)+","+str(r2);
         print(res);
@@ -258,12 +289,21 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
         self.fitsReader.GenerateVLKBUrl(res);
         result= self.fitsReader.CalculateRMS();
         res_str=self.fitsReader.GetSurveysData();
-        renderWindow = self.getView('-1')
+        #renderWindow = self.getView('-1')
         # renderWindow.Modified() # either modified or render
         #renderer.ResetCamera()
         #renderWindow.Render()
         #self.getApplication().InvokeEvent('UpdateEvent')
         # return self.resetCamera()
+        
+        fits=self.fitsReader.GetOutput();
+        bounds=fits.GetBounds()
+        print("Bounds updated ");
+        self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
+        self.frustumSource.Update()
+        
+        print("Bounds updated ");
+        self.resetCamera()
         return res_str;
 
 
@@ -271,6 +311,44 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
     def updateResolution(self, resolution):
         self.cone.SetValue(0, resolution*self.rms)
         self.cone.Update()
+        renderWindow = self.getView('-1')
+        # renderWindow.Modified() # either modified or render
+        renderWindow.Render()
+        self.getApplication().InvokeEvent('UpdateEvent')
+    
+    @exportRpc("vtk.cone.planes.update")
+    def updatePlanes(self, planes):
+        #print("FitsReader planes with ");
+        #setSliceDatacube(planes-1);
+        
+        #update lut
+        rMin=self.fitsReader.GetRangeSliceMin(planes-1)
+        rMax=self.fitsReader.GetRangeSliceMax(planes-1)
+        #print(rMin,rMax)
+        lut = vtk.vtkLookupTable();
+        #lut.SetScaleToLog10();
+        lut.SetTableRange(rMin,rMax) #fitsReader.GetRangeSlice(0)[0], fitsReader.GetRangeSlice(0)[1] );
+        lut.SetHueRange (0., 0.);
+        lut.SetSaturationRange (0., 0.);
+        lut.SetValueRange(0., 1.);
+        #SelectLookTable("Gray",lut);
+        lut.Build()
+        
+        self.viewer.GetWindowLevel().SetOutputFormatToRGB();
+        self.viewer.GetWindowLevel().SetLookupTable(lut);
+        self.viewer.GetImageActor().InterpolateOff();
+        self.viewer.SetSlice(planes-1);
+        
+        #goContour();
+
+        #ui->minSliceLineEdit->setText(QString::number(myfits->GetRangeSlice(i)[0]));
+        #ui->maxSliceLineEdit->setText(QString::number(myfits->GetRangeSlice(i)[1]));
+        
+        self.viewer.GetRenderer().ResetCamera();
+        self.viewer.Render();
+
+        
+        self.sliceA.SetPosition (0,0,planes);
         renderWindow = self.getView('-1')
         # renderWindow.Modified() # either modified or render
         renderWindow.Render()
@@ -298,3 +376,91 @@ class VtkCone(vtk_protocols.vtkWebProtocol):
 
       if 'End' in event["type"]:
         self.getApplication().InvokeEvent('EndInteractionEvent')
+
+
+
+    @exportRpc("viewport.gesture")
+    def updateGesture(self, event):
+             
+      if 'StartPinch' in event["type"]:
+        self.getApplication().InvokeEvent('StartInteractionEvent')
+        renderWindow = self.getView(event['view'])
+        print("StartPinch")
+        camera = renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera()
+        self.fp = camera.GetFocalPoint()
+        self.pos = camera.GetPosition()
+        self.zoom=0.0;
+        
+      if 'Pinch' in event["type"]:
+        renderWindow = self.getView(event['view'])
+        
+        
+        if renderWindow and 'scale' in event:
+           scaleF=2.0
+           zoomFactor = (event['scale']-self.zoom)/scaleF;
+           #self.zoom=event['scale'];
+
+           camera = renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera()
+           
+           #delta = [self.fp[i] - self.pos[i] for i in range(3)]
+           camera.Zoom(zoomFactor)
+
+           #pos2 = camera.GetPosition()
+           #camera.SetFocalPoint([pos2[i] + delta[i] for i in range(3)])
+           renderWindow.Modified()
+
+      if 'EndPinch' in event["type"]:
+        self.getApplication().InvokeEvent('EndInteractionEvent')
+
+      if 'StartPan' in event["type"]:
+        self.getApplication().InvokeEvent('StartInteractionEvent')
+        
+        self.translate=[0.0,0.0];
+        
+      if 'Pan' in event["type"]:
+        #print("pan")
+        renderWindow = self.getView(event['view'])
+        
+        if renderWindow and 'translation' in event:
+          
+           print(event['translation'])
+           rotateFactor = [event['translation'][i]-self.translate[i] for i in range(2)];
+           self.translate[0] =event['translation'][0]
+           self.translate[1] =event['translation'][1]
+
+           camera = renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera()
+           
+           
+           camera.Elevation(rotateFactor[1]/20)
+           camera.Azimuth(rotateFactor[0]/20)
+
+           
+           renderWindow.Modified()
+       
+      
+      if 'StartRotate' in event["type"]:
+        print("StartRotate")
+      if 'Rotate' in event["type"]:
+        print("Rotate") 
+        renderWindow = self.getView(event['view'])
+        
+        if renderWindow and 'rotation' in event:
+           print(event['rotation'])
+           
+           rotateFactor = event['rotation'];
+
+           camera = renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera()
+           
+           
+           #camera.Elevation(rotateFactor[0]/20)
+           camera.Azimuth(rotateFactor/20)
+
+           
+           renderWindow.Modified()
+        
+      #if 'Pinch' in event["type"]:
+      #   print("Pinch")
+
+      if 'End' in event["type"]:
+        print("End")
+        
