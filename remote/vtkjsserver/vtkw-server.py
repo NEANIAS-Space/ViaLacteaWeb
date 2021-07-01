@@ -45,7 +45,7 @@ from vtk.web import protocols as vtk_protocols
 
 import vtk
 import vtk_override_protocols
-from vtk_protocol import vlwBase
+from vtk_protocol import VtkCone
 
 # =============================================================================
 # Server class
@@ -73,8 +73,8 @@ class _Server(vtk_wslink.ServerProtocol):
         self.registerVtkWebProtocol(
             vtk_override_protocols.vtkWebPublishImageDelivery(decode=False))
 
-        # vlw API
-        self.registerVtkWebProtocol(vlwBase())
+        # Custom API
+        self.registerVtkWebProtocol(VtkCone())
 
         # tell the C++ web app to use no encoding.
         # ParaViewWebPublishImageDelivery must be set to decode=False to match.
@@ -98,12 +98,8 @@ class _Server(vtk_wslink.ServerProtocol):
             renderWindowInteractor = vtk.vtkRenderWindowInteractor()
             renderWindowInteractor.SetRenderWindow(renderWindow)
             
-            #renderWindowInteractor.GetInteractorStyle().SetCurrentStyleToTrackballCamera() #SetCurrentStyleToMultiTouchCamera()#
-            istyle = vtk.vtkInteractorStyleImage()
-            #istyle.SetInteractionModeToImage3D() 
-            renderWindowInteractor.SetInteractorStyle(istyle)
-            renderWindowInteractor.GetInteractorStyle().AutoAdjustCameraClippingRangeOn();
-            print("interactor was set up")
+            renderWindowInteractor.GetInteractorStyle().SetCurrentStyleToMultiTouchCamera()#SetCurrentStyleToTrackballCamera()
+            #renderWindowInteractor.GetInteractorStyle().AutoAdjustCameraClippingRangeOn();
             renderWindowInteractor.EnableRenderOff()
             self.getApplication().GetObjectIdMap().SetActiveObject("VIEW", renderWindow)
 
