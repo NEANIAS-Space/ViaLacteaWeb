@@ -439,26 +439,14 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                  #print(dist)
                  if dist>0.0:
                      self.getApplication().InvokeEvent('StartInteractionEvent')
-                     m = math.fabs((y-self.y1)/(x-self.x1));
-                     angle =1*( 90 - math.atan(m)*180/math.pi);
-                     angX=math.sin(x-self.x1)*180/math.pi
-                     angY=math.sin(y-self.y1)*180/math.pi
+
+                     angX=(x-self.x1)*180/math.pi
+                     angY=(y-self.y1)*180/math.pi
                      camera = self.renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera()
-                     
+                     #TODO: implement manually
                      camera.Azimuth(angX)
                      camera.Elevation(angY)
-                     t=vtk.vtkTransform()
-                     t.Identity();
-                     
-                     
-                     t.Translate(+self.cam_init_foc[0],+self.cam_init_foc[1],+self.cam_init_foc[2]);
-                     t.RotateWXYZ(angle,0,0,1);
-                     t.Translate(-self.cam_init_foc[0],-self.cam_init_foc[1],-self.cam_init_foc[2]);
-                     
-                     #self.cam_init_pos=t.TransformPoint(self.cam_init_pos);
-                     #print(self.cam_init_pos)
-                     #camera.SetPosition(self.cam_init_pos)
-                     
+
                      
                      self.renderWindow.Render()
                      #print(angle)
