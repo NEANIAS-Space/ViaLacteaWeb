@@ -45,7 +45,7 @@ from vtk.web import protocols as vtk_protocols
 
 import vtk
 import vtk_override_protocols
-from vtk_protocol import VtkCone
+from vtk_protocol import vlwBase
 
 # =============================================================================
 # Server class
@@ -73,8 +73,8 @@ class _Server(vtk_wslink.ServerProtocol):
         self.registerVtkWebProtocol(
             vtk_override_protocols.vtkWebPublishImageDelivery(decode=False))
 
-        # Custom API
-        self.registerVtkWebProtocol(VtkCone())
+        # vlw API
+        self.registerVtkWebProtocol(vlwBase())
 
         # tell the C++ web app to use no encoding.
         # ParaViewWebPublishImageDelivery must be set to decode=False to match.
@@ -98,8 +98,12 @@ class _Server(vtk_wslink.ServerProtocol):
             renderWindowInteractor = vtk.vtkRenderWindowInteractor()
             renderWindowInteractor.SetRenderWindow(renderWindow)
             
-            #renderWindowInteractor.GetInteractorStyle().SetCurrentStyleToMultiTouchCamera()#SetCurrentStyleToTrackballCamera()
-            #renderWindowInteractor.GetInteractorStyle().AutoAdjustCameraClippingRangeOn();
+            #renderWindowInteractor.GetInteractorStyle().SetCurrentStyleToTrackballCamera() #SetCurrentStyleToMultiTouchCamera()#
+            istyle = vtk.vtkInteractorStyleImage()
+            #istyle.SetInteractionModeToImage3D() 
+            renderWindowInteractor.SetInteractorStyle(istyle)
+            renderWindowInteractor.GetInteractorStyle().AutoAdjustCameraClippingRangeOn();
+            print("interactor was set up")
             renderWindowInteractor.EnableRenderOff()
             self.getApplication().GetObjectIdMap().SetActiveObject("VIEW", renderWindow)
 
@@ -110,20 +114,16 @@ class _Server(vtk_wslink.ServerProtocol):
 if __name__ == "__main__":
     # Create argument parser
     parser = argparse.ArgumentParser(description="ViaLactea datacube")
-    parser.add_argument("--updir", help="directory for temp files",type=str)
-    parser.add_argument("--session", type=str)
+   
+
     # Add arguments
     server.add_arguments(parser)
     _Server.add_arguments(parser)
     args = parser.parse_args()
-    print("Directoy to upload");
-
-    print(args.updir)
-    print(args.session)
+    # print("Directoy to upload");
+    # print(args.upload-directory)
+    
     _Server.configure(args)
 
     # Start server
     server.start_webserver(options=args, protocol=_Server, disableLogging=True)
-~                                                                               
-
-
