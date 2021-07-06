@@ -98,10 +98,14 @@ class _Server(vtk_wslink.ServerProtocol):
             renderWindowInteractor = vtk.vtkRenderWindowInteractor()
             renderWindowInteractor.SetRenderWindow(renderWindow)
             
-            #renderWindowInteractor.GetInteractorStyle().SetCurrentStyleToTrackballCamera() #SetCurrentStyleToMultiTouchCamera()#
-            istyle = vtk.vtkInteractorStyleImage()
+            renderWindowInteractor.GetInteractorStyle().SetCurrentStyleToTrackballCamera() #SetCurrentStyleToMultiTouchCamera()#
+            
+            istyle = vtk.vtkInteractorStyleTrackballCamera()
             #istyle.SetInteractionModeToImage3D() 
             renderWindowInteractor.SetInteractorStyle(istyle)
+            print("Interactor type") 
+            name=renderWindowInteractor.GetInteractorStyle().GetClassName()
+            print(name)
             renderWindowInteractor.GetInteractorStyle().AutoAdjustCameraClippingRangeOn();
             print("interactor was set up")
             renderWindowInteractor.EnableRenderOff()

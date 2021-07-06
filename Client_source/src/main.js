@@ -8,6 +8,7 @@ import Vuex from 'vuex';
 import App from 'vlw-base/src/components/core/App';
 import vuetify from 'vlw-base/src/plugins/vuetify.js';
 import store from 'vlw-base/src/store';
+import router from 'vlw-base/src/router';
 //import idsrvAuth from 'vlw-base/src/idsrvAuth';
 
 /* eslint-disable-next-line import/extensions */
@@ -22,14 +23,16 @@ Vue.config.performance = true;
 Vue.config.performance = process.env.NODE_ENV !== 'production';
 
 //idsrvAuth.startup().then((ok) => {
-//if (ok) {
+//  if (ok) {
 new Vue({
   vuetify,
   store,
+  //router,
 
   render: (h) => h(App),
 }).$mount('#app');
-//} else {
-//  console.log('Startup was not ok');
-// }
+//   console.log('Startup is set');
+// } else {
+//    console.log('Startup was not ok');
+//  }
 //});

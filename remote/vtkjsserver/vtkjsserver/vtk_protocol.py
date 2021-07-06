@@ -59,6 +59,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.Ren1=renderer;
         self.Ren2=renderer2;
         
+         #Entry point to entire vis logic:
+        #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1328
+        
+        
         
         #First pipeline as described in 
         #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1386
@@ -158,6 +162,13 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
        
         print(self.cam_init_pos)
         
+        #getInteractorStyle info to check
+       
+        print("Interactor type") 
+        name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
+        print(name)
+        #https://vtk.org/doc/nightly/html/classvtkInteractorStyleTrackballCamera.html
+        
         #Second pipeline
         
         rMin=fitsReader.GetRangeSliceMin(0)
@@ -197,6 +208,17 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
         self.viewer.GetRenderer().ResetCamera()
         
+        print("Interactor type2") 
+        name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
+        print(name)
+        #https://vtk.org/doc/nightly/html/classvtkInteractorStyleImage.html
+        
+        #istyle = vtk.vtkInteractorStyleTrackballCamera()
+        #self.renderWindow.GetInteractor().SetInteractorStyle(istyle)
+        #print("Interactor replaced with") 
+        #name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
+        #print(name)
+         
         legendScaleActorImage =  vtk.vtkLegendScaleActor();
         legendScaleActorImage.LegendVisibilityOff();
         #legendScaleActorImage.setFitsFile(myfits);
@@ -403,6 +425,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         renderWindow.Render()
         self.getApplication().InvokeEvent('UpdateEvent')
 
+#REMOTE MOUSE PROCEDURES
+#https://kitware.github.io/vtk-js/api/Interaction_Style_InteractorStyleRemoteMouse.html
 
     @exportRpc("viewport.mouse.zoom.wheel")
     def updateZoomFromWheel(self, event):
@@ -435,24 +459,36 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                  angle  = 0;
                  x=event['x']
                  y=event['y']
-                 dist=math.sqrt((self.x1-x)*(self.x1-x)+(self.y1-y)*(self.y1-y))
+                 
                  #print(dist)
-                 if dist>0.0:
+                 if self.x1>-1000000 and self.y1>-1000000 :  #dist>0.0:
                      self.getApplication().InvokeEvent('StartInteractionEvent')
-
+                     dist=math.sqrt((self.x1-x)*(self.x1-x)+(self.y1-y)*(self.y1-y))
+                     #https://github.com/Kitware/VTK/blob/master/Interaction/Style/vtkInteractorStyleTrackballCamera.cxx#L248
                      angX=(x-self.x1)*180/math.pi
                      angY=(y-self.y1)*180/math.pi
                      camera = self.renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera()
-                     #TODO: implement manually
+                     
                      camera.Azimuth(angX)
                      camera.Elevation(angY)
-
+                     
+                     #print(self.cam_init_pos)
+                     #camera.SetPosition(self.cam_init_pos)
+                     
                      
                      self.renderWindow.Render()
                      #print(angle)
                      self.getApplication().InvokeEvent('EndInteractionEvent')
                  self.x1=x
                  self.y1=y
+             if event['shiftKey']==0:
+                 #vtkInteractorStyleImage
+                 #https://github.com/Kitware/VTK/blob/master/Interaction/Style/vtkInteractorStyleImage.cxx
+                 print("other")
+         
+         if event['action']=='up':
+             self.x1=-1000000
+             self.y1=-1000000     
                  
                  
              
@@ -461,27 +497,27 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
     def updateCamView(self, v):
         camera = self.renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera();
         renderer=self.renderWindow.GetRenderers().GetFirstRenderer()
-        #renderer.ResetCamera()
+        renderer.ResetCamera()
         print(self.cam_init_foc)
         print(self.cam_init_pos)
         camera.SetFocalPoint( self.cam_init_foc );
         camera.SetPosition( self.cam_init_pos);
         #self.renderWindow.GetRenderers().GetFirstRenderer().SetViewUp( 0, 1, 0 );
-        self.renderWindow.Render()
+        #self.renderWindow.Render()
         print("done")
         
-        if  v==1:
+        #if  v==1:
             #setCameraAzimuth(-180);
-            camera.Azimuth(-180);
-        elif v== 2:
+        #    camera.Azimuth(-180);
+        #elif v== 2:
             #setCameraElevation(90);
-            camera.Elevation(90);
-        elif v==  3:
+        #    camera.Elevation(90);
+        #elif v==  3:
             #setCameraAzimuth(-90);
-            camera.Azimuth(-90);
-        elif v==  4:
+        #    camera.Azimuth(-90);
+        #elif v==  4:
             #setCameraAzimuth(90);
-            camera.Azimuth(90);
+        #    camera.Azimuth(90);
            
         self.renderWindow.Render()
     
