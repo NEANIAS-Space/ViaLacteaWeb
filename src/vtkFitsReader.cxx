@@ -68,6 +68,26 @@ void vtkFitsReader::DownloadSurveyDataCube(std::string str_u)
         std::string::iterator end_pos = std::remove(str.begin(), str.end(), ' ');
         str.erase(end_pos, str.end());
         
+        //fill datacube info data
+        
+        survey=doc2.FirstChildElement( "results" )->FirstChildElement( "input" )->FirstChildElement( "SurveyName" )->GetText();
+        species=doc2.FirstChildElement( "results" )->FirstChildElement( "input" )->FirstChildElement( "Species" )->GetText();
+        transition=doc2.FirstChildElement( "results" )->FirstChildElement( "input" )->FirstChildElement( "Transition" )->GetText();
+        cut = doc2.FirstChildElement( "results" )->FirstChildElement( "CUT" )->GetText();       
+       // <SurveyName>HOPS</SurveyName>
+       // <Species>H2O</Species>
+       // <Transition>6-1-6_5-2-3</Transition>
+        //<CUT> HOPS/G357.3-003.9-H2O-cube.fits[457:481 51:75 1:2337] </CUT>
+        
+        m_dataCubeDesc="";
+        m_dataCubeDesc+=survey;
+        m_dataCubeDesc+=" \n";
+        m_dataCubeDesc+=species;
+        m_dataCubeDesc+=" \n";
+        m_dataCubeDesc+=transition;
+        m_dataCubeDesc+=" \n";
+        m_dataCubeDesc+=cut;
+        
         std::cout<<str.c_str()<<std::endl;
         
         DownloadFITSFromUrl(str);

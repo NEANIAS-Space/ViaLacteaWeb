@@ -40,6 +40,7 @@ public:
 
     void SetFileName(std::string name);
     std::string GetFileName(){return filename;}
+    std::string GetDataCubeData(){return m_dataCubeDesc;}
 
     vtkTypeMacro(vtkFitsReader,vtkAlgorithm);
     void PrintSelf(ostream& os, vtkIndent indent);
@@ -109,6 +110,9 @@ protected:
     std::string survey;
     std::string species;
     std::string transition;
+    std::string cut;
+    
+    std::string m_dataCubeDesc;
 
     float datamin;
     float datamax;

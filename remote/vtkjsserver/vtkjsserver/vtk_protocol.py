@@ -23,6 +23,9 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.min=0.0;
         self.max=0.0;
         self.imageViewer = vtk.vtkImageViewer2();
+        #GetWindowLevel ()
+        #SetColorWindow (double s)
+        #SetColorLevel (double s)
         self.viewer  =vtk.vtkResliceImageViewer();
         self.sliceA = vtk.vtkActor();
         self.sliceE= vtk.vtkPlanes();
@@ -34,12 +37,29 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.cam_init_foc=[0.0 for i in range(3)];
         self.rotateX=False;
         
+        self.textActor = vtk.vtkTextActor()
+        #self.textActor.VisibilityOff()
+        self.textActor.PickableOff()
+        
         #contours
         self.currentContourActor = vtk.vtkLODActor();
         self.currentContourActorForMainWindow = vtk.vtkLODActor();
         
-        self.x1=0.0
-        self.y1=0.0
+        self.x1=-1000000
+        self.y1=-1000000
+        self.MotionFactor = 10.0;
+        self.winScale=100;
+        
+        #window level
+        self.WindowLevelStartPosition=[0.0 for i in range(2)]
+        
+
+        self.WindowLevelCurrentPosition=[0.0 for i in range(2)]
+        
+        self.WindowLevelInitial =[0.0 for i in range(2)]
+
+        self.WindowLevelInitial[0] = 1.0; # Window
+        self.WindowLevelInitial[1] = 0.5; # Level
         
     def updateScene(self, renderer, renWin):
       renderer.ResetCamera();
@@ -153,7 +173,21 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         legendScaleActor3d =  vtk.vtkLegendScaleActor();
         legendScaleActor3d.LegendVisibilityOff();
         #legendScaleActor3d.setFitsFile(myfits);
-        renderer.AddActor(legendScaleActor3d)
+        renderer.AddActor(legendScaleActor3d);
+        
+        
+           #add label
+        tprop = vtk.vtkTextProperty()
+        tprop.SetFontFamilyToArial()
+        tprop.SetFontSize(10)
+        tprop.BoldOff()
+        tprop.ShadowOff()
+        tprop.SetColor(1, 1, 1)
+        #self.textActor.SetDisplayPosition(205, 205)
+        #self.textActor.SetTextProperty(tprop);
+        self.textActor.SetInput(fitsReader.GetDataCubeData())
+        renderer.AddActor(self.textActor);
+        print("Test was set")
         
         #Set coordinates for reset camera 
         # all actors where added to renderer for first pipeline above
@@ -167,7 +201,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         print("Interactor type") 
         name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
         print(name)
-        #https://vtk.org/doc/nightly/html/classvtkInteractorStyleTrackballCamera.html
+        
+     
         
         #Second pipeline
         
@@ -211,7 +246,6 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         print("Interactor type2") 
         name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
         print(name)
-        #https://vtk.org/doc/nightly/html/classvtkInteractorStyleImage.html
         
         #istyle = vtk.vtkInteractorStyleTrackballCamera()
         #self.renderWindow.GetInteractor().SetInteractorStyle(istyle)
@@ -310,6 +344,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         fits=self.fitsReader.GetOutput();
         bounds=fits.GetBounds()
         
+        self.textActor.SetInput(self.fitsReader.GetDataCubeData())
+        self.textActor.Modified();
+        self.textActor.GetMapper().Update()
+        
         self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
         self.frustumSource.Update()
         #print("Slice updated")
@@ -353,6 +391,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.fitsReader.GenerateVLKBUrl(res);
         result= self.fitsReader.CalculateRMS();
         res_str=self.fitsReader.GetSurveysData();
+        self.textActor.SetInput(self.fitsReader.GetDataCubeData())
+        self.textActor.Modified();
+        self.textActor.GetMapper().Update()
+        
         #renderWindow = self.getView('-1')
         # renderWindow.Modified() # either modified or render
         #renderer.ResetCamera()
@@ -362,7 +404,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
         fits=self.fitsReader.GetOutput();
         bounds=fits.GetBounds()
-        print("Bounds updated ");
+        #print("Bounds updated ");
         self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
         self.frustumSource.Update()
         
@@ -375,6 +417,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.cam_init_pos=self.Ren1.GetActiveCamera( ).GetPosition();
         self.cam_init_foc=self.Ren1.GetActiveCamera( ).GetFocalPoint();
         print("Bounds updated ");
+        #self.Ren1.Render();
         return res_str;
 
 
@@ -454,26 +497,96 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
     def updateMouseMove(self, event):
          #print("mouse move")
          if event['action']=='down':
-             if event['shiftKey']==1:
-                 
+             
+             if event['shiftKey']==0:
+                 #https://github.com/Kitware/VTK/blob/master/Interaction/Style/vtkInteractorStyleTrackballCamera.cxx#L248
                  angle  = 0;
                  x=event['x']
                  y=event['y']
-                 
+                 #print("Got rotate call")
                  #print(dist)
-                 if self.x1>-1000000 and self.y1>-1000000 :  #dist>0.0:
-                     self.getApplication().InvokeEvent('StartInteractionEvent')
-                     dist=math.sqrt((self.x1-x)*(self.x1-x)+(self.y1-y)*(self.y1-y))
-                     #https://github.com/Kitware/VTK/blob/master/Interaction/Style/vtkInteractorStyleTrackballCamera.cxx#L248
-                     angX=(x-self.x1)*180/math.pi
-                     angY=(y-self.y1)*180/math.pi
-                     camera = self.renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera()
+                 #check if outside of port
+                 if x-0.01<=0.0 or y-0.01<=0.0 or x+0.01>1.0 or y+0.01>1.0:
+                    self.getApplication().InvokeEvent('EndInteractionEvent')
+                    self.x1=-1000000
+                    self.y1=-1000000   
+                    #print("Outside screen")
+                 if self.x1>-1000000 and self.y1>-1000000 :  #dist>0.0: Second point
+                     if x<0.5:
+                 
+                        self.getApplication().InvokeEvent('StartInteractionEvent')
                      
-                     camera.Azimuth(angX)
-                     camera.Elevation(angY)
+                        dx=self.x1-x
+                        dy=self.y1-y
+                        #print(x,y)
+                        #x,y are normalised from 0 to 1
+                        size=self.renderWindow.GetSize();
+                        delta_elevation = self.winScale*20.0 / size[1];
+                        delta_azimuth = self.winScale*40.0 / size[0];
                      
-                     #print(self.cam_init_pos)
-                     #camera.SetPosition(self.cam_init_pos)
+                        #dist=math.sqrt((self.x1-x)*(self.x1-x)+(self.y1-y)*(self.y1-y))
+                        rxf = dx * delta_azimuth * self.MotionFactor;
+                        ryf = dy * delta_elevation * self.MotionFactor;
+                     
+                        #angX=(x-self.x1)*180/math.pi
+                        #angY=(y-self.y1)*180/math.pi
+                        camera = self.renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera()
+                     
+                        camera.Azimuth(rxf)
+                        camera.Elevation(ryf)
+                        camera.OrthogonalizeViewUp();
+                        #self.Ren1.ResetCameraClippingRange();
+                     
+                        #print("Rotation done")
+                     else : #window scale
+                        #https://github.com/Kitware/VTK/blob/master/Interaction/Style/vtkInteractorStyleImage.cxx#L180
+                        size=self.renderWindow.GetSize();
+                        delta_y = 4.0 / size[1];
+                        delta_x = 4.0 / size[0];
+                        
+                        window = self.WindowLevelInitial[0];
+                        level = self.WindowLevelInitial[1];
+                        
+                        dx=(self.x1-x)*delta_x;
+                        dy=(self.y1-y)*delta_y;
+                        
+                        # Scale by current values
+                        d_w=0.01
+                        if window < 0:
+                            d_w=-0.01
+                        d_l=0.01
+                        if level < 0:
+                            d_l=-0.01
+
+                        if math.fabs(window) > 0.01:
+                            dx = dx * window;
+                        else:
+                            dx = dx * d_w
+                        if math.fabs(level) > 0.01:
+                            dy = dy * level;
+                        else:
+                            dy = dy * d_l;
+                        
+                        # Abs so that direction does not flip
+
+                        if window < 0.0:
+                            dx = -1 * dx;
+                        if level < 0.0:
+                            dy = -1 * dy;
+                        # Compute new window level
+
+                        newWindow = dx + window;
+                        newLevel = level - dy;
+
+                        if newWindow < 0.01:
+                             newWindow = 0.01;
+                        self.viewer.SetColorWindow(newWindow)
+                        self.viewer.SetColorLevel(newLevel);
+                        self.viewer.Modified()
+                        print(newWindow,newLevel);
+
+
+                        
                      
                      
                      self.renderWindow.Render()
@@ -481,14 +594,15 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                      self.getApplication().InvokeEvent('EndInteractionEvent')
                  self.x1=x
                  self.y1=y
-             if event['shiftKey']==0:
+             if event['shiftKey']==1:
                  #vtkInteractorStyleImage
                  #https://github.com/Kitware/VTK/blob/master/Interaction/Style/vtkInteractorStyleImage.cxx
                  print("other")
          
-         if event['action']=='up':
+         if event['action']=='up': #end of interaction
              self.x1=-1000000
-             self.y1=-1000000     
+             self.y1=-1000000   
+             self.getApplication().InvokeEvent('EndInteractionEvent')  
                  
                  
              
