@@ -1,8 +1,9 @@
 import { mapGetters, mapActions } from 'vuex';
 import logo from 'vlw-base/src/assets/colorize.png';
 import RemoteRenderingView from 'vlw-base/src/components/widgets/RemoteRenderingView';
-import { createOidcAuth, SignInType } from 'vlw-base/src/vue-oidc-client';
+//import { createOidcAuth, SignInType } from 'vlw-base/src/vue-oidc-client';
 //import protocols from 'vlw-base/src/protocols';
+import idsrvAuth from 'vlw-base/src/idsrvAuth';
 // ----------------------------------------------------------------------------
 // Component API
 // ----------------------------------------------------------------------------
@@ -12,6 +13,9 @@ export default {
   components: {
     RemoteRenderingView,
   },
+    meta: {
+      authName: idsrvAuth.authName,
+    },
 
   data() {
     return {
@@ -107,8 +111,21 @@ export default {
       this.loadData();
     },
   },
+    
+   // created: function() {
+   //   if(!this.$oidc.isAuthenticated){
+  //         this.$oidc.signIn();
+   //      }
+  //  },
 
   mounted() {
-    this.connect();
+    if(!this.$oidc.isAuthenticated){
+      this.$oidc.signIn();
+    }
+      
+    else{
+      this.connect();
+    }
+    
   },
 };

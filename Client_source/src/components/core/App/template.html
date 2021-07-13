@@ -5,51 +5,22 @@
 
 
   <v-app-bar app shrink-on-scroll height="60">
-
+<a href="/" @click="$oidc.signOut()" v-if="$oidc.isAuthenticated"
+       >Signout</a>
 <v-spacer />
 
  <v-switch class="d-md-none" v-model="rotateX" v-on:change="setRotate" label="Rotate axis" />
 
+<v-btn v-model="toggle_cam"
+           color="primary"
+           text
+           @click="setCameraView"
+         >
+           Reset Camera
+         </v-btn>
 
-<v-btn-toggle v-model="toggle_cam" mandatory v-on:change='setCameraView'>
-<v-btn
-  :value="1"
    
    
-  
->
-<v-img max-height="30"
-max-width="30" :src="require('@/assets/PIC_BACK.png')"
-/>
-</v-btn>
-
-<v-btn
-  :value="2"
-  
->
-<v-img max-height="30"
-max-width="30" :src="require('@/assets/PIC_TOP.png')"
-/>
-</v-btn>
-
-<v-btn
-  :value="3"
-  
->
-<v-img max-height="30"
-max-width="30" :src="require('@/assets/PIC_LEFT.png')"
-/>
-</v-btn>
-
-<v-btn
-  :value="4"
- 
->
-<v-img max-height="30"
-max-width="30" :src="require('@/assets/PIC_RIGHT.png')"
-/>
-</v-btn>
-  </v-btn-toggle>
 
 
 <v-container style="width: 35%">
@@ -121,7 +92,9 @@ max-width="30" :src="require('@/assets/PIC_RIGHT.png')"
        
 </v-container>
 
-
+<v-switch class="v-input--reverse" @click="contours = !contours" label="Use contours" >
+               
+       </v-switch>
 
 
 <!--Settings-->
@@ -158,9 +131,7 @@ max-width="30" :src="require('@/assets/PIC_RIGHT.png')"
          label="Theme"
           @click="$vuetify.theme.dark = !$vuetify.theme.dark"
         />
-         <v-switch class="v-input--reverse" @click="contours = !contours" label="Use contours" >
-                
-        </v-switch>
+        
         
        </v-card-text>
 
