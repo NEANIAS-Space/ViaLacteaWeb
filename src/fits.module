@@ -8,6 +8,9 @@ DEPENDS
   VTK::CommonCore
   VTK::CommonDataModel
   VTK::CommonExecutionModel
+  VTK::RenderingOpenGL2
+  VTK::RenderingCore
+  VTK::RenderingAnnotation
   VTK::IOImage
 PRIVATE_DEPENDS
   VTK::CommonMisc

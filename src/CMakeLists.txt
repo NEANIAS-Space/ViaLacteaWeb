@@ -8,7 +8,8 @@ set(LIB_NAME vtkVialactea)
 # Sources in the current directory (library sources only!)
 set(LIB_SRCS
   vtkFitsReader.cxx 
-  vtkFitsUnstructuredReader.cxx 
+  vtkFitsUnstructuredReader.cxx
+  vtkLegendScaleActor.cxx
 
 )
 
@@ -24,6 +25,35 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/INSTALL/CFITSIO/lib)
 set(LIB_SPECIAL
     xml_procs.cpp
     tinyxml2.cpp
+    astroutils.cpp
+    libwcs/fitsfile.c
+    libwcs/wcs.c
+    libwcs/wcslib.c
+    libwcs/platepos.c
+     libwcs/hget.c  
+     libwcs/fileutil.c  
+     libwcs/fitswcs.c  
+     libwcs/distort.c  
+     libwcs/hput.c  
+     libwcs/iget.c  
+     libwcs/imio.c  
+     libwcs/imhfile.c  
+     libwcs/dateutil.c  
+     libwcs/wcsinit.c  
+     libwcs/dsspos.c  
+     
+     libwcs/wcstrig.c  
+     libwcs/wcscon.c  
+     libwcs/lin.c  
+     
+     libwcs/tnxpos.c  
+     
+     libwcs/cel.c  
+     libwcs/proj.c  
+     libwcs/sph.c  
+     libwcs/worldpos.c  
+    
+    
    
 )
 
@@ -31,6 +61,7 @@ set(LIB_SPECIAL
 set(LIB_HDRS
 vtkFitsReader.h
 vtkFitsUnstructuredReader.h
+vtkLegendScaleActor.h
 )
 
 
