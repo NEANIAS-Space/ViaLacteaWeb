@@ -512,9 +512,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                     self.y1=-1000000   
                     #print("Outside screen")
                  if self.x1>-1000000 and self.y1>-1000000 :  #dist>0.0: Second point
+                     self.getApplication().InvokeEvent('StartInteractionEvent')
                      if x<0.5:
                  
-                        self.getApplication().InvokeEvent('StartInteractionEvent')
+                        
                      
                         dx=self.x1-x
                         dy=self.y1-y
@@ -541,14 +542,19 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                      else : #window scale
                         #https://github.com/Kitware/VTK/blob/master/Interaction/Style/vtkInteractorStyleImage.cxx#L180
                         size=self.renderWindow.GetSize();
-                        delta_y = 4.0 / size[1];
-                        delta_x = 4.0 / size[0];
+                        delta_y = self.winScale*80.0 / size[1];
+                        delta_x = self.winScale*160.0 / size[0];
                         
-                        window = self.WindowLevelInitial[0];
-                        level = self.WindowLevelInitial[1];
+                        #self.WindowLevelInitial[0]=self.viewer.GetColorWindow()
+                        #self.WindowLevelInitial[1]=self.viewer.GetColorLevel()
+                        
+                        window = self.viewer.GetColorWindow()
+                        level = self.viewer.GetColorLevel()
+                        #print("initial", window,level);
                         
                         dx=(self.x1-x)*delta_x;
                         dy=(self.y1-y)*delta_y;
+                        
                         
                         # Scale by current values
                         d_w=0.01
@@ -583,6 +589,12 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                         self.viewer.SetColorWindow(newWindow)
                         self.viewer.SetColorLevel(newLevel);
                         self.viewer.Modified()
+                        self.viewer.Render()
+                        self.WindowLevelInitial[0]=newWindow;
+                        self.WindowLevelInitial[1]=newLevel;
+                        
+                        self.Ren2.Render()
+                        self.renderWindow.GetInteractor().Render();
                         print(newWindow,newLevel);
 
 
