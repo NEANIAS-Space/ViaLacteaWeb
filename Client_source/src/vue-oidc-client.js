@@ -78,10 +78,10 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
             store: sessionStorage
         }),
         post_logout_redirect_uri: appUrl,
-        redirect_uri: `${appUrl}vlw/${nameSlug}`,
-        popup_post_logout_redirect_uri: `${appUrl}vlw/${nameSlug}`,
-        popup_redirect_uri: `${appUrl}vlw/${nameSlug}`,
-        silent_redirect_uri: `${appUrl}vlw/${nameSlug}`,
+        redirect_uri: `${appUrl}${nameSlug}`,
+        popup_post_logout_redirect_uri: `${appUrl}${nameSlug}`,
+        popup_redirect_uri: `${appUrl}${nameSlug}`,
+        silent_redirect_uri: `${appUrl}${nameSlug}`,
         ...oidcConfig // everything can be overridden!
     };
     Log.debug(`Creating new oidc auth as ${authName}`);

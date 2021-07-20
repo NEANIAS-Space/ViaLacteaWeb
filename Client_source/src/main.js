@@ -5,11 +5,11 @@ import 'core-js/modules/web.immediate';
 import Vue from 'vue';
 import Vuex from 'vuex';
 
-import App from 'vlw-base/src/components/core/App';
-//import App from 'vlw-base/src/App.vue';
+//import App from 'vlw-base/src/components/core/App';
+import App from 'vlw-base/src/App.vue';
 import vuetify from 'vlw-base/src/plugins/vuetify.js';
 import store from 'vlw-base/src/store';
-//import router from 'vlw-base/src/router';
+import router from 'vlw-base/src/router';
 import idsrvAuth from 'vlw-base/src/idsrvAuth';
 
 /* eslint-disable-next-line import/extensions */
@@ -28,7 +28,7 @@ idsrvAuth.startup().then((ok) => {
     new Vue({
       vuetify,
       store,
-    //  router,
+      router,
       render: (h) => h(App),
     }).$mount('#app');
     console.log('Startup is set');

@@ -50,10 +50,10 @@ export default {
       const config = { application: 'cone' };
 
       // Custom setup for development (http:8080 / ws:1234)
-      if (location.port === '8080') {
+      if (location.port === '80') {
         // We suppose that we have dev server and that ParaView/VTK is running on port 1234
-        config.sessionURL = `ws://${location.hostname}:1234/ws`;
-        //config.sessionURL="ws://${location.hostname}/proxy?sessionId=${id}&path=ws";
+       // config.sessionURL = `ws://${location.hostname}:1234/ws`;
+        config.sessionURL="ws://${location.hostname}/proxy?sessionId=${id}&path=ws";
         // config.sessionURL = `ws://192.168.1.49:1234/ws`;
         //  config.sessionURL = `ws://visivo-server.oact.inaf.it:1234/ws`;
       }

@@ -1,5 +1,5 @@
 <template>
-  <div class="vlw2">
+  <div class="main">
     <h1>This is a login-protected page</h1>
     <ul class="claims">
       <li v-for="c in claims" :key="c.key">

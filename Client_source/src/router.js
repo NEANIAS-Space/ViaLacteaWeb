@@ -30,7 +30,7 @@ const routes = [
     component: App,
   },
   {
-    path: '/vlw2',
+    path: '/main2',
     name: 'VLW2',
     meta: {
       authName: idsrvAuth.authName,

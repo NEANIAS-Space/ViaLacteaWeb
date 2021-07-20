@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">Home</router-link> |
+    
      
       
       <a href="#" @click="$oidc.signOut()" v-if="$oidc.isAuthenticated"
@@ -11,6 +11,11 @@
       >
     </div>
     <router-view />
+ 
+   <h2>ViaLacteaWeb</h2>
+   <p>Welcome fellow astronomer! To start using the service please authenticate using your NEANIAS credentials</p>
+   <a href="/vlw">Go to VLW</a>
+  
   </div>
 </template>
 
