@@ -34,6 +34,7 @@ std::string trim(const std::string &s)
     return std::string(it, rit.base());
 }
 
+
 AstroUtils::AstroUtils()
 {
 }
@@ -65,19 +66,22 @@ void AstroUtils::xy2sky(std::string map, float x, float y, double* coord, int wc
         //TODO uncomment
         std::string s=trim(str); //remove spaces at beginning and end
         //split(tokens, str, is_any_of(" "), boost::token_compress_on); //gets all tokens splitted by space
-        std::string delimiter = ' ';
-
+        char delimiter = ' ';
+        //std::cout<<str<<std::endl;
+        //std::cout<<s<<std::endl;
         size_t pos = 0;
         std::string token;
         while ((pos = s.find(delimiter)) != std::string::npos) {
-            tokens.push_back( s.substr(0, pos));
-            //std::cout << token << std::endl;
-            s.erase(0, pos + delimiter.length());
+            std::string sub=s.substr(0, pos);
+            if(sub!="") //check that empty string is not pushed
+               tokens.push_back(sub);
+            s.erase(0, pos + 1);
         }
-
+        
         coord[0] = atof(tokens[0].c_str());
         coord[1] = atof(tokens[1].c_str());
-
+        //std::cout<<coord[0]<<" , "<<coord[1]<<std::endl;
+        
     }
 
     delete [] fn;

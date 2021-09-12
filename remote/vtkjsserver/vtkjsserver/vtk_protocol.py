@@ -19,6 +19,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #initialisation of main variables
         self.cone = vtk.vtkMarchingCubes();
         self.fitsReader = vtk.vtkVialactea.vtkFitsReader();
+        
         self.rms=0.0;
         self.min=0.0;
         self.max=0.0;
@@ -42,8 +43,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.textActor.PickableOff()
         
         #contours
-        self.currentContourActor = vtk.vtkLODActor();
-        self.currentContourActorForMainWindow = vtk.vtkLODActor();
+        self.currentContourActor = vtk.vtkLODActor();#vtk.vtkActor2D();#
+        #self.currentContourActorForMainWindow = vtk.vtkLODActor();
         
         self.x1=-1000000
         self.y1=-1000000
@@ -61,10 +62,75 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.WindowLevelInitial[0] = 1.0; # Window
         self.WindowLevelInitial[1] = 0.5; # Level
         
+        self.useContours=False;
+        
     def updateScene(self, renderer, renWin):
-      renderer.ResetCamera();
-      renWin.GetInteractor().Render();
+        renderer.ResetCamera();
+        renWin.GetInteractor().Render();
 
+    def removeContour(self):
+        
+        self.Ren2.RemoveActor2D(self.currentContourActor);
+    
+        #myParentVtkWindow->m_Ren1->RemoveActor2D(currentContourActorForMainWindow);
+        #myParentVtkWindow->ui->qVTK1->update();
+        #myParentVtkWindow->ui->qVTK1->renderWindow()->GetInteractor()->Render();
+        print("to impleent")
+       
+    
+    
+    def goContour(self):
+        self.removeContour();
+        
+        plane = vtk.vtkPlane();
+        plane.SetOrigin(0,0, self.viewer.GetSlice());
+        plane.SetNormal(0,0,1);
+      
+
+        cutter = vtk.vtkCutter();
+        cutter.SetCutFunction(plane);
+        cutter.SetInputData(self.fitsReader.GetOutput());
+        cutter.Update();
+
+        cutterMapper = vtk.vtkPolyDataMapper();
+        cutterMapper.SetInputConnection( cutter.GetOutputPort());
+
+        polyData = vtk.vtkPolyData();
+        contoursFilter = vtk.vtkContourFilter();
+        polyData = cutter.GetOutput();
+        maxv=self.fitsReader.GetMax();
+        minv=self.fitsReader.GetMin();
+
+        contoursFilter.GenerateValues(4, minv, maxv);
+        contoursFilter.SetInputConnection(cutter.GetOutputPort());
+        
+
+        contourLineMapperer = vtk.vtkPolyDataMapper();
+        contourLineMapperer.SetInputConnection(contoursFilter.GetOutputPort());
+       
+        
+       
+        contourLineMapperer.SetScalarRange(minv, maxv);
+        contourLineMapperer.ScalarVisibilityOn();
+        contourLineMapperer.SetScalarModeToUsePointData();
+        contourLineMapperer.SetColorModeToMapScalars();
+        
+
+
+        self.currentContourActor.SetMapper(contourLineMapperer);
+        self.currentContourActor.GetProperty().SetLineWidth(1);
+        
+        
+
+        self.Ren2.AddActor2D(self.currentContourActor);
+        #self.renderWindow.GetInteractor().Render();
+        self.renderWindow.Render()
+        print("contours are set");
+
+
+   
+       
+        
 
     @exportRpc("vtk.initialize")
     def createVisualization(self):
@@ -167,16 +233,18 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         vtkAxesWidget.SetEnabled(1);
         vtkAxesWidget.InteractiveOff();
         
-        
-        
+                
         #TODO import custom legend
-        legendScaleActor3d =  vtk.vtkLegendScaleActor();
+        legendScaleActor3d =  vtk.vtkVialactea.vtkLegendScaleActor2();
         legendScaleActor3d.LegendVisibilityOff();
-        #legendScaleActor3d.setFitsFile(myfits);
+        legendScaleActor3d.SetFitsFileName(fitsReader.GetFileName());
+       
+        
         renderer.AddActor(legendScaleActor3d);
+        #print("legend scale fits was set")
+       
         
-        
-           #add label
+        #add label
         tprop = vtk.vtkTextProperty()
         tprop.SetFontFamilyToArial()
         tprop.SetFontSize(10)
@@ -187,7 +255,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #self.textActor.SetTextProperty(tprop);
         self.textActor.SetInput(fitsReader.GetDataCubeData())
         renderer.AddActor(self.textActor);
-        print("Test was set")
+        
         
         #Set coordinates for reset camera 
         # all actors where added to renderer for first pipeline above
@@ -253,10 +321,12 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
         #print(name)
          
-        legendScaleActorImage =  vtk.vtkLegendScaleActor();
-        legendScaleActorImage.LegendVisibilityOff();
+         #NOTE: no need to allocate another one and read fits again
+        #legendScaleActorImage =  vtk.vtkVialactea.vtkLegendScaleActor2();
+        #legendScaleActorImage.LegendVisibilityOff();
+        #legendScaleActor3d.SetFitsFileName(fitsReader.GetFileName());
         #legendScaleActorImage.setFitsFile(myfits);
-        renderer2.AddActor(legendScaleActorImage);
+        renderer2.AddActor(legendScaleActor3d);
         
         #updateScene();
         
@@ -266,6 +336,9 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
        
         camera = self.Ren1.GetActiveCamera()
         camera.SetViewUp( 0, 1, 0 )
+        
+        if self.useContours:
+           self.goContour();
 
         
         
@@ -279,51 +352,6 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
         return self.resetCamera()
         
-    def removeContour(self):
-        print("to impleent")
-        #m_Ren2->RemoveActor2D(currentContourActor);
-    
-        #myParentVtkWindow->m_Ren1->RemoveActor2D(currentContourActorForMainWindow);
-        #myParentVtkWindow->ui->qVTK1->update();
-        #myParentVtkWindow->ui->qVTK1->renderWindow()->GetInteractor()->Render();
-       
-    
-    
-    def goContour(self):
-        self.removeContour();
-        plane = vtk.vtkPlane();
-        plane.SetOrigin(0,0, self.viewer.GetSlice());
-        plane.SetNormal(0,0,1);
-
-        cutter = vtk.vtkCutter();
-        cutter.SetCutFunction(plane);
-        cutter.SetInputData(self.self.fitsReader.GetOutput());
-        cutter.Update();
-
-        cutterMapper = vtk.vtkPolyDataMapper();
-        cutterMapper.SetInputConnection( cutter.GetOutputPort());
-
-        polyData = vtk.vtkPolyData();
-        contoursFilter = vtk.vtkContourFilter();
-        polyData = cutter.GetOutput();
-
-        contoursFilter.GenerateValues(0, 0.5, 1);
-        contoursFilter.SetInputConnection(cutter.GetOutputPort());
-
-        contourLineMapperer = vtk.vtkPolyDataMapper();
-        contourLineMapperer.SetInputConnection(contoursFilter.GetOutputPort());
-        ##contourLineMapperer.SetScalarRange(ui->lowerBoundLineEdit->text().toDouble(), ui->upperBoundLineEdit->text().toDouble());
-        contourLineMapperer.ScalarVisibilityOn();
-        contourLineMapperer.SetScalarModeToUsePointData();
-        contourLineMapperer.SetColorModeToMapScalars();
-
-
-        self.currentContourActor.SetMapper(contourLineMapperer);
-        self.currentContourActor.GetProperty().SetLineWidth(1);
-
-        self.renderWindow.GetFirstRenderer().AddActor2D(currentContourActor);
-        self.renderWindow().GetInteractor().Render();
-
 
     def ResetCam():
         renderWindow = self.getView('-1')
@@ -350,7 +378,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
         self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
         self.frustumSource.Update()
-        #print("Slice updated")
+        print("Cube loaded")
         #self.ResetCamera()
         #print("Slice updated")
 
@@ -419,6 +447,18 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         print("Bounds updated ");
         #self.Ren1.Render();
         return res_str;
+        
+    @exportRpc("vtk.cone.loadcubedata")
+    def getDataCubeData(self):
+        #print("calling GETFITSDATA");
+        tmin=self.fitsReader.GetMin()
+        tmax=self.fitsReader.GetMax()
+        rms=self.fitsReader.GetRMS()
+        tmin/=rms;
+        tmax/=rms;
+        pmin=1
+        pmax=self.fitsReader.GetNaxes(2)
+        return [tmin,tmax,1,pmax];
 
 
     @exportRpc("vtk.cone.resolution.update")
@@ -430,6 +470,22 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         renderWindow.Render()
         self.getApplication().InvokeEvent('UpdateEvent')
     
+    @exportRpc("vtk.cone.contours.update")
+    def updateContours(self,contours):
+        
+        print("FitsReader contours");
+        self.useContours=contours;
+        if self.useContours:
+           self.goContour()
+        else :
+           self.removeContour()
+        self.renderWindow.Render()
+        #self.renderWindow.GetInteractor().Render();
+        self.getApplication().InvalidateCache(self.renderWindow)
+        self.getApplication().InvokeEvent('UpdateEvent')
+        
+        
+           
     @exportRpc("vtk.cone.planes.update")
     def updatePlanes(self, planes):
         #print("FitsReader planes with ");
@@ -452,8 +508,11 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.viewer.GetWindowLevel().SetLookupTable(lut);
         self.viewer.GetImageActor().InterpolateOff();
         self.viewer.SetSlice(planes-1);
+        #print("Start contours");
+        if self.useContours:
+           self.goContour();
+
         
-        #goContour();
 
         #ui->minSliceLineEdit->setText(QString::number(myfits->GetRangeSlice(i)[0]));
         #ui->maxSliceLineEdit->setText(QString::number(myfits->GetRangeSlice(i)[1]));
@@ -512,7 +571,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                     self.y1=-1000000   
                     #print("Outside screen")
                  if self.x1>-1000000 and self.y1>-1000000 :  #dist>0.0: Second point
-                     self.getApplication().InvokeEvent('StartInteractionEvent')
+                     #self.getApplication().InvokeEvent('StartInteractionEvent')
                      if x<0.5:
                  
                         
@@ -588,22 +647,27 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                              newWindow = 0.01;
                         self.viewer.SetColorWindow(newWindow)
                         self.viewer.SetColorLevel(newLevel);
-                        self.viewer.Modified()
-                        self.viewer.Render()
-                        self.WindowLevelInitial[0]=newWindow;
-                        self.WindowLevelInitial[1]=newLevel;
+                        #self.viewer.Modified()
+                        #self.viewer.Render()
+                        #self.WindowLevelInitial[0]=newWindow;
+                        #self.WindowLevelInitial[1]=newLevel;
                         
-                        self.Ren2.Render()
-                        self.renderWindow.GetInteractor().Render();
-                        print(newWindow,newLevel);
+                        #self.Ren2.Render()
+                        #self.renderWindow.GetInteractor().Render();
+                        #print(newWindow,newLevel);
 
 
                         
                      
                      
-                     self.renderWindow.Render()
+                     #self.renderWindow.Render()
+                     self.renderWindow.Modified()
                      #print(angle)
-                     self.getApplication().InvokeEvent('EndInteractionEvent')
+                     #self.getApplication().InvokeEvent('EndInteractionEvent')
+                 
+                 else:
+                    self.getApplication().InvokeEvent('StartInteractionEvent')
+                    #print("Start")
                  self.x1=x
                  self.y1=y
              if event['shiftKey']==1:
@@ -614,7 +678,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
          if event['action']=='up': #end of interaction
              self.x1=-1000000
              self.y1=-1000000   
-             self.getApplication().InvokeEvent('EndInteractionEvent')  
+             self.getApplication().InvokeEvent('EndInteractionEvent') 
+             #print("End") 
                  
                  
              
@@ -630,7 +695,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         camera.SetPosition( self.cam_init_pos);
         #self.renderWindow.GetRenderers().GetFirstRenderer().SetViewUp( 0, 1, 0 );
         #self.renderWindow.Render()
-        print("done")
+       
         
         #if  v==1:
             #setCameraAzimuth(-180);
@@ -646,6 +711,9 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #    camera.Azimuth(90);
            
         self.renderWindow.Render()
+        self.getApplication().InvalidateCache(self.renderWindow)
+        self.getApplication().InvokeEvent('UpdateEvent')
+        print("done")
     
     @exportRpc("vtk.cone.rotate.update")
     def updateRotateAxis(self, v):

@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkLegendScaleActor.h
+  Module:    vtkLegendScaleActor2.h
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -12,7 +12,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-// .NAME vtkLegendScaleActor - annotate the render window with scale and distance information
+// .NAME vtkLegendScaleActor2 - annotate the render window with scale and distance information
 // .SECTION Description
 // This class is used to annotate the render window. Its basic goal is to
 // provide an indication of the scale of the scene. Four axes surrounding the
@@ -31,8 +31,8 @@
 // computed distances may provide users the wrong sense of scale. These
 // effects are not present when parallel projection is enabled.
 
-#ifndef vtkLegendScaleActor_h
-#define vtkLegendScaleActor_h
+#ifndef vtkLegendScaleActor2_h
+#define vtkLegendScaleActor2_h
 
 #include "vtkRenderingAnnotationModule.h" // For export macro
 #include "vtkProp.h"
@@ -50,17 +50,18 @@ class vtkTextMapper;
 class vtkPoints;
 class vtkCoordinate;
 
-class VTKRENDERINGANNOTATION_EXPORT vtkLegendScaleActor : public vtkProp
+class VTK_EXPORT vtkLegendScaleActor2 : public vtkProp
 {
 public:
   // Description:
   // Instantiate the class.
-  static vtkLegendScaleActor *New();
-  void setFitsFile(vtkFitsReader* fits);
-  void setFitsFileName(std::string fitsName )
+  static vtkLegendScaleActor2 *New();
+ 
+  void SetFitsFileName(std::string name);
+  void SetName(){};
   // Description:
   // Standard methods for the class.
-  vtkTypeMacro(vtkLegendScaleActor,vtkProp);
+  vtkTypeMacro(vtkLegendScaleActor2,vtkProp);
  // void PrintSelf(ostream& os, vtkIndent indent);
   void PrintHeader(ostream& os, vtkIndent indent) override;
   void PrintTrailer(std::ostream& os , vtkIndent indent) override;
@@ -173,11 +174,10 @@ public:
   virtual int RenderOpaqueGeometry(vtkViewport*);
 
 protected:
-  vtkLegendScaleActor();
-  ~vtkLegendScaleActor();
+  vtkLegendScaleActor2();
+  ~vtkLegendScaleActor2();
 
-  std::string m_fitsName;
-
+  std::string m_name;
   int    LabelMode;
   int    RightBorderOffset;
   int    TopBorderOffset;
@@ -212,9 +212,9 @@ protected:
   vtkTimeStamp         BuildTime;
 
 private:
-  vtkLegendScaleActor(const vtkLegendScaleActor&);  //Not implemented
-  void operator=(const vtkLegendScaleActor&);  //Not implemented
-  vtkFitsReader* myfits;
+  vtkLegendScaleActor2(const vtkLegendScaleActor2&);  //Not implemented
+  void operator=(const vtkLegendScaleActor2&);  //Not implemented
+  
 };
 
 #endif

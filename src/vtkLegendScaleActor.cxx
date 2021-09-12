@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Visualization Toolkit
-  Module:    vtkLegendScaleActor.cxx
+  Module:    vtkLegendScaleActor2.cxx
 
   Copyright (c) Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
@@ -34,11 +34,11 @@
 #include "vtkFitsReader.h"
 #include "vtkSmartPointer.h"
 
-vtkStandardNewMacro(vtkLegendScaleActor);
+vtkStandardNewMacro(vtkLegendScaleActor2);
 
 
 //----------------------------------------------------------------------
-vtkLegendScaleActor::vtkLegendScaleActor()
+vtkLegendScaleActor2::vtkLegendScaleActor2()
 {
     //this->LabelMode = DISTANCE;
     this->LabelMode = XY_COORDINATES;
@@ -158,10 +158,11 @@ vtkLegendScaleActor::vtkLegendScaleActor()
 
     this->Coordinate = vtkCoordinate::New();
     this->Coordinate->SetCoordinateSystemToDisplay();
+    this->m_name="";
 }
 
 //----------------------------------------------------------------------
-vtkLegendScaleActor::~vtkLegendScaleActor()
+vtkLegendScaleActor2::~vtkLegendScaleActor2()
 {
     this->RightAxis->Delete();
     this->TopAxis->Delete();
@@ -184,7 +185,7 @@ vtkLegendScaleActor::~vtkLegendScaleActor()
 }
 
 //----------------------------------------------------------------------
-void vtkLegendScaleActor::GetActors2D(vtkPropCollection *pc)
+void vtkLegendScaleActor2::GetActors2D(vtkPropCollection *pc)
 {
     pc->AddItem(this->RightAxis);
     pc->AddItem(this->TopAxis);
@@ -193,7 +194,7 @@ void vtkLegendScaleActor::GetActors2D(vtkPropCollection *pc)
 }
 
 //----------------------------------------------------------------------
-void vtkLegendScaleActor::ReleaseGraphicsResources(vtkWindow *w)
+void vtkLegendScaleActor2::ReleaseGraphicsResources(vtkWindow *w)
 {
     this->RightAxis->ReleaseGraphicsResources(w);
     this->TopAxis->ReleaseGraphicsResources(w);
@@ -209,7 +210,7 @@ void vtkLegendScaleActor::ReleaseGraphicsResources(vtkWindow *w)
 }
 
 //----------------------------------------------------------------------
-int vtkLegendScaleActor::RenderOpaqueGeometry(vtkViewport *viewport)
+int vtkLegendScaleActor2::RenderOpaqueGeometry(vtkViewport *viewport)
 {
     this->BuildRepresentation(viewport);
 
@@ -245,7 +246,7 @@ int vtkLegendScaleActor::RenderOpaqueGeometry(vtkViewport *viewport)
 }
 
 //----------------------------------------------------------------------
-int vtkLegendScaleActor::RenderOverlay(vtkViewport *viewport)
+int vtkLegendScaleActor2::RenderOverlay(vtkViewport *viewport)
 {
     int renderedSomething=0;
     if ( this->RightAxisVisibility )
@@ -279,18 +280,25 @@ int vtkLegendScaleActor::RenderOverlay(vtkViewport *viewport)
 }
 
 
-void vtkLegendScaleActor::setFitsFile(vtkFitsReader* fits )
-{
-    myfits=fits;
-}
+//----------------------------------------------------------------------
+void vtkLegendScaleActor2::SetFitsFileName(std::string name) {
 
-void vtkLegendScaleActor::setFitsFileName(std::string fitsName )
-{
-    m_fitsName=fitsName;
+
+    if (name.empty()) {
+        vtkErrorMacro(<<"Null Datafile!");
+        return;
+    }
+
+
+    m_name= name;
+    this->Modified();
+    
+
+
 }
 
 //----------------------------------------------------------------------
-void vtkLegendScaleActor::BuildRepresentation(vtkViewport *viewport)
+void vtkLegendScaleActor2::BuildRepresentation(vtkViewport *viewport)
 {
     if ( 1 ) //it's probably best just to rerender every time
         //   if ( this->GetMTime() > this->BuildTime ||
@@ -346,11 +354,10 @@ void vtkLegendScaleActor::BuildRepresentation(vtkViewport *viewport)
             double *xL = this->RightAxis->GetPositionCoordinate()-> GetComputedWorldValue(viewport);
             double *xR = this->RightAxis->GetPosition2Coordinate()-> GetComputedWorldValue(viewport);
 
-            AstroUtils().xy2sky(m_fitsName,xR[1],xL[1],sky_coord_gal,3);
+            AstroUtils().xy2sky(m_name,xR[1],xL[1],sky_coord_gal,3);
             lo=sky_coord_gal[1];
-            //myfits->GetFileName()
 
-            AstroUtils().xy2sky(m_fitsName,xL[1],xR[1],sky_coord_gal,3);
+            AstroUtils().xy2sky(m_name,xL[1],xR[1],sky_coord_gal,3);
             up=sky_coord_gal[1];
 
            this->RightAxis->SetRange(lo,up);
@@ -365,10 +372,10 @@ void vtkLegendScaleActor::BuildRepresentation(vtkViewport *viewport)
             xL = this->BottomAxis->GetPositionCoordinate()->GetComputedWorldValue(viewport);
             xR = this->BottomAxis->GetPosition2Coordinate()->GetComputedWorldValue(viewport);
 
-            AstroUtils().xy2sky(m_fitsName,xL[0],xR[0],sky_coord_gal,3);
+            AstroUtils().xy2sky(m_name,xL[0],xR[0],sky_coord_gal,3);
             lo=sky_coord_gal[0];
 
-            AstroUtils().xy2sky(m_fitsName,xR[0],xL[0],sky_coord_gal,3);
+            AstroUtils().xy2sky(m_name,xR[0],xL[0],sky_coord_gal,3);
             up=sky_coord_gal[0];
 
 
@@ -458,7 +465,7 @@ void vtkLegendScaleActor::BuildRepresentation(vtkViewport *viewport)
 }
 
 //----------------------------------------------------------------------
-void vtkLegendScaleActor::AllAnnotationsOn()
+void vtkLegendScaleActor2::AllAnnotationsOn()
 {
     if ( this->RightAxisVisibility && this->TopAxisVisibility &&
          this->LeftAxisVisibility && this->BottomAxisVisibility &&
@@ -477,7 +484,7 @@ void vtkLegendScaleActor::AllAnnotationsOn()
 }
 
 //----------------------------------------------------------------------
-void vtkLegendScaleActor::AllAnnotationsOff()
+void vtkLegendScaleActor2::AllAnnotationsOff()
 {
     if ( !this->RightAxisVisibility && !this->TopAxisVisibility &&
          !this->LeftAxisVisibility && !this->BottomAxisVisibility &&
@@ -496,7 +503,7 @@ void vtkLegendScaleActor::AllAnnotationsOff()
 }
 
 //----------------------------------------------------------------------
-void vtkLegendScaleActor::AllAxesOn()
+void vtkLegendScaleActor2::AllAxesOn()
 {
     if ( this->RightAxisVisibility && this->TopAxisVisibility &&
          this->LeftAxisVisibility && this->BottomAxisVisibility )
@@ -513,7 +520,7 @@ void vtkLegendScaleActor::AllAxesOn()
 }
 
 //----------------------------------------------------------------------
-void vtkLegendScaleActor::AllAxesOff()
+void vtkLegendScaleActor2::AllAxesOff()
 {
     if ( !this->RightAxisVisibility && !this->TopAxisVisibility &&
          !this->LeftAxisVisibility && !this->BottomAxisVisibility )
@@ -530,7 +537,7 @@ void vtkLegendScaleActor::AllAxesOff()
 }
 /*
 //----------------------------------------------------------------------
-void vtkLegendScaleActor::PrintSelf(ostream& os, vtkIndent indent)
+void vtkLegendScaleActor2::PrintSelf(ostream& os, vtkIndent indent)
 {
     //Superclass typedef defined in vtkTypeMacro() found in vtkSetGet.h
     this->Superclass::PrintSelf(os,indent);
@@ -621,18 +628,18 @@ void vtkLegendScaleActor::PrintSelf(ostream& os, vtkIndent indent)
 
 //----------------------------------------------------------------------------
 */
-void vtkLegendScaleActor::PrintSelf(ostream& os, vtkIndent indent)
+void vtkLegendScaleActor2::PrintSelf(ostream& os, vtkIndent indent)
 {
     // this->Superclass::PrintSelf(os, indent);
 }
 
-void vtkLegendScaleActor::PrintHeader(ostream& os, vtkIndent indent)
+void vtkLegendScaleActor2::PrintHeader(ostream& os, vtkIndent indent)
 {
     // this->Superclass::PrintHeader(os, indent);
 
 }
 
-void vtkLegendScaleActor::PrintTrailer(std::ostream& os , vtkIndent indent)
+void vtkLegendScaleActor2::PrintTrailer(std::ostream& os , vtkIndent indent)
 {
     // this->Superclass::PrintTrailer(os, indent);
 }
