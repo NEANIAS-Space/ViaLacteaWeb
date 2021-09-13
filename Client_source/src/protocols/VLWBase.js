@@ -8,6 +8,9 @@ export default function createMethods(session) {
       session.call('vtk.cone.resolution.update', [resolution]),
     updatePlanes: (planes) =>
       session.call('vtk.cone.planes.update', [planes]),
+    updateContours: (contours) =>
+      session.call('vtk.cone.contours.update', [contours]),
+    
     updateFits: (url) =>
       session.call('vtk.cone.fits.update', [url]),
     updateCamView: (v) =>
@@ -17,5 +20,7 @@ export default function createMethods(session) {
       
     loadXMLFITS: (res) =>
                  session.call('vtk.cone.urlfits', [res]),
+                 
+    getDataCubeData:() => session.call('vtk.cone.loadcubedata', []),            
       };
 }

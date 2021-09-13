@@ -14,6 +14,7 @@ export default {
     config: null,
     busy: false,
     json: '[{}]',
+    dc_params: [1,10,1,1060],
   },
   getters: {
     WS_CLIENT(state) {
@@ -21,6 +22,9 @@ export default {
     },
     WS_JSON(state) {
       return state.json;
+    },
+    WS_PARAMS(state) {
+      return state.dc_params;
     },
     WS_CONFIG(state) {
       return state.config;
@@ -52,7 +56,7 @@ export default {
       // Custom setup for development (http:8080 / ws:1234)
       if (location.port === '80') {
         // We suppose that we have dev server and that ParaView/VTK is running on port 1234
-       // config.sessionURL = `ws://${location.hostname}:1234/ws`;
+        //config.sessionURL = `ws://${location.hostname}:1234/ws`;
         config.sessionURL="ws://${location.hostname}/proxy?sessionId=${id}&path=ws";
         // config.sessionURL = `ws://192.168.1.49:1234/ws`;
         //  config.sessionURL = `ws://visivo-server.oact.inaf.it:1234/ws`;
@@ -148,6 +152,18 @@ export default {
         //  console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
       }
     },
+    WS_UPDATE_CONTOURS({ state }, contours) {
+      if (state.client) {
+        // var t0 = performance.now();
+    
+        //clientToConnect.beginBusy();
+        state.client
+          .getRemote()
+          .VLWBase.updateContours(contours)
+          .catch(console.error);
+      
+      }
+    },
     WS_UPDATE_CAMERAVIEW({ state }, v) {
       if (state.client) {
         // var t0 = performance.now();
@@ -169,7 +185,21 @@ export default {
     },
     WS_FITS_UPDATE({ state }, url) {
       if (state.client) {
-        state.client.getRemote().VLWBase.updateFits(url).catch(console.error);
+        state.client.getRemote().VLWBase.updateFits(url).then(
+        function() {
+          //TODO: load datacube data
+          state.client.getRemote().VLWBase.getDataCubeData().then((result) => {
+            state.dc_params = result;
+            //alert(state.dc_params[3]);
+          
+            return state.dc_params;
+            //https://stackoverflow.com/questions/59699813/vuetify-data-table-and-binding-data-coming-from-json-object - get a table from json
+            //also https://codepen.io/isogunro/pen/VQRoax
+          })
+          
+          }
+                     
+          );
       }
     },
     WS_UPDATE_XMLFITS({ state }, res) {
@@ -190,7 +220,22 @@ export default {
             return state.json;
             //https://stackoverflow.com/questions/59699813/vuetify-data-table-and-binding-data-coming-from-json-object - get a table from json
             //also https://codepen.io/isogunro/pen/VQRoax
-          });
+          }).then(
+              function() {
+                //TODO: load datacube data
+                state.client.getRemote().VLWBase.getDataCubeData().then((result) => {
+                  state.dc_params = result;
+                  //alert(state.dc_params[3]);
+                
+                  return state.dc_params;
+                  //https://stackoverflow.com/questions/59699813/vuetify-data-table-and-binding-data-coming-from-json-object - get a table from json
+                  //also https://codepen.io/isogunro/pen/VQRoax
+                })
+               // state.client.getRemote().VLWBase.updateResolution(5);
+               //   return alert("Done");
+              }
+            
+          );
         //
       }
     },

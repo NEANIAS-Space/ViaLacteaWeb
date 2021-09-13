@@ -20,7 +20,6 @@ export default {
   data() {
     return {
       dialog: false,
-      contours: false,
       /*toggle_one: 1,*/
       logo,
       ex1: { label: 'Threshold', val: 3.0, color: 'orange darken-3' },
@@ -57,6 +56,7 @@ export default {
       busy: 'WS_BUSY',
       resolution: 'CONE_RESOLUTION',
       planes: 'CONE_PLANES',
+      contours: 'CONE_CONTOURS',
       p1: 'CONE_P1',
       p2: 'CONE_P2',
       r1: 'CONE_R1',
@@ -64,6 +64,7 @@ export default {
       dl: 'CONE_DL',
       db: 'CONE_DB',
       out_json: 'WS_JSON',
+      params: 'WS_PARAMS',
       toggle_cam: 'CONE_CAMERA',
       rotateX: 'CONE_ROTATE',
     }),
@@ -72,6 +73,7 @@ export default {
     ...mapActions({
       setResolution: 'CONE_RESOLUTION_UPDATE',
       setPlanes: 'CONE_PLANES_UPDATE',
+      setContours: 'CONE_CONTOURS_UPDATE',
       resetCamera: 'WS_RESET_CAMERA',
       connect: 'WS_CONNECT',
       loadData: 'CONE_XMLFITS_UPDATE',
@@ -102,6 +104,11 @@ export default {
     onButtonClick(item) {
       this.mini = !this.mini;
       this.loadDataShort(item.url);
+      //.then(
+      //    function(configResponse) {
+      //        return alert("Done");
+      //    }
+      //)
       //alert('click on ' + item.url)
     },
 
@@ -119,13 +126,13 @@ export default {
   //  },
 
   mounted() {
-    if(!this.$oidc.isAuthenticated){
-      this.$oidc.signIn();
-    }
+   // if(!this.$oidc.isAuthenticated){
+ //     this.$oidc.signIn();
+ //   }
       
-    else{
+  //  else{
       this.connect();
-    }
+ //   }
     
   },
 };

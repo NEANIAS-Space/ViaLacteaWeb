@@ -1,7 +1,7 @@
 import Vue from 'vue';
 import VueRouter from 'vue-router';
 import App from 'vlw-base/src/components/core/App';
-import Home from 'vlw-base/src/views/Home.vue';
+import Hello from 'vlw-base/src/components/core/Hello';
 import idsrvAuth from 'vlw-base/src/idsrvAuth';
 Vue.use(VueRouter);
 const routes = [
@@ -15,8 +15,8 @@ const routes = [
   //  },
   {
     path: '/',
-    name: 'Home',
-    component: Home,
+    name: 'Hello',
+    component: Hello,
   },
   {
     path: '/vlw',

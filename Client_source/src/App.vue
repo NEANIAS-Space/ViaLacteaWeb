@@ -11,12 +11,13 @@
       >
     </div>
     <router-view />
- 
-   <h2>ViaLacteaWeb</h2>
+    
+ </div>
+  <!---- <h2>ViaLacteaWeb</h2>
    <p>Welcome fellow astronomer! To start using the service please authenticate using your NEANIAS credentials</p>
-   <a href="/vlw">Go to VLW</a>
+   <a href="/vlw">Go to VLW</a> -->
   
-  </div>
+  
 </template>
 
 <style>

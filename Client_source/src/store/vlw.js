@@ -9,7 +9,8 @@ export default {
     dl:0.0,
     db:0.0,
     toggle_cam:1,
-    rotateX:true
+    rotateX:true,
+    contours:false
   },
   getters: {
     CONE_RESOLUTION(state) {
@@ -24,6 +25,9 @@ export default {
       
     CONE_PLANES(state) {
       return state.planes;
+    },
+    CONE_CONTOURS(state) {
+      return state.contours;
     },
     CONE_P1(state) {
           return state.p1;
@@ -81,6 +85,12 @@ export default {
       state.planes = r;
       
       return dispatch('WS_UPDATE_PLANES', r);
+    },
+    async CONE_CONTOURS_UPDATE({ state, dispatch }, contours) {
+      const r = Boolean(contours);
+      state.contours = r;
+      
+      return dispatch('WS_UPDATE_CONTOURS', r);
     },
     async CONE_SETCAMERAVIEW({ state, dispatch },toggle_cam) {
       const t = Number(toggle_cam);

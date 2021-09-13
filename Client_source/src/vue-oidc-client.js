@@ -71,7 +71,7 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
     const nameSlug = slugify(authName);
     // merge passed oidcConfig with defaults
     const config = {
-        response_type: 'code',
+        response_type: 'id_token',
         scope: 'openid profile',
         automaticSilentRenew: true,
         userStore: new WebStorageStateStore({
@@ -79,9 +79,9 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
         }),
         post_logout_redirect_uri: appUrl,
         redirect_uri: `${appUrl}${nameSlug}`,
-        popup_post_logout_redirect_uri: `${appUrl}${nameSlug}`,
-        popup_redirect_uri: `${appUrl}${nameSlug}`,
-        silent_redirect_uri: `${appUrl}${nameSlug}`,
+        popup_post_logout_redirect_uri: `${appUrl}auth/signoutpop/${nameSlug}`,
+        popup_redirect_uri: `${appUrl}auth/signinpop/${nameSlug}`,
+        silent_redirect_uri: `${appUrl}auth/signinsilent/${nameSlug}`,
         ...oidcConfig // everything can be overridden!
     };
     Log.debug(`Creating new oidc auth as ${authName}`);
@@ -192,7 +192,7 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
                     const vroutePath = '/' +
                         getUrlPath(config.redirect_uri).substring((router.options.base || '/').length);
                     router.addRoute({
-                        path: vroutePath,
+                        path: '/main', /*vroutePath*/
                         name: `signinwin-${nameSlug}`,
                         component: {
                             render: h => h('div'),
@@ -324,7 +324,7 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
                 setTimeout(() => {
                     Log.debug(`${auth.authName} auth silent renew retry`);
                     mgr.signinSilent();
-                }, 50000);
+                }, 5000);
             }
             else {
                 signInIfNecessary();
