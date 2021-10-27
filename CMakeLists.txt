@@ -7,14 +7,38 @@ cmake_minimum_required(VERSION 2.8.7)
 set(VIALACTEA_CMAKE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 set(CMAKE_MODULE_PATH ${VIALACTEA_CMAKE_DIR} ${CMAKE_MODULE_PATH})
 
-
+option(BUILD_DOC "Build documentation" ON)
 # Third party library dependencies
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/INSTALL/CFITSIO/include)
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/INSTALL/CFITSIO/lib)
 
 
+ if(BUILD_DOC)
  
+ find_package(Doxygen)
+ if (DOXYGEN_FOUND)
+     # set input and output files
+     set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/docs/Doxyfile.in)
+     set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+ 
+     # request to configure the file
+     configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+     message("Doxygen build started")
+ 
+     # note the option ALL which allows to build the docs together with the application
+     add_custom_target( doc_doxygen ALL
+         COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc_doxygen
+         COMMENT "Generating API documentation with Doxygen"
+         VERBATIM )
+     
+     
+ else (DOXYGEN_FOUND)
+   message("Doxygen need to be installed to generate the doxygen documentation")
+ endif (DOXYGEN_FOUND)
+ 
+ endif ()
   # Find VTK and get VTK configuration information
  # find_package(VTK REQUIRED)
 find_package(VTK COMPONENTS CommonCore CommonDataModel InteractionStyle RenderingCore FiltersSources CommonMisc Python RenderingOpenGL2)

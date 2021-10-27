@@ -13,29 +13,28 @@
 
 =========================================================================*/
 #include "vtkLegendScaleActor.h"
-#include "vtkAxisActor2D.h"
-#include "vtkCommand.h"
-#include "vtkObjectFactory.h"
-#include "vtkMath.h"
-#include "vtkCamera.h"
-#include "vtkRenderer.h"
-#include "vtkWindow.h"
-#include "vtkPolyData.h"
-#include "vtkPoints.h"
-#include "vtkCellArray.h"
-#include "vtkUnsignedCharArray.h"
+#include "astroutils.h"
 #include "vtkActor2D.h"
+#include "vtkAxisActor2D.h"
+#include "vtkCamera.h"
+#include "vtkCellArray.h"
+#include "vtkCellData.h"
+#include "vtkCommand.h"
+#include "vtkCoordinate.h"
+#include "vtkFitsReader.h"
+#include "vtkMath.h"
+#include "vtkObjectFactory.h"
+#include "vtkPoints.h"
+#include "vtkPolyData.h"
 #include "vtkPolyDataMapper2D.h"
+#include "vtkRenderer.h"
+#include "vtkSmartPointer.h"
 #include "vtkTextMapper.h"
 #include "vtkTextProperty.h"
-#include "vtkCellData.h"
-#include "vtkCoordinate.h"
-#include "astroutils.h"
-#include "vtkFitsReader.h"
-#include "vtkSmartPointer.h"
+#include "vtkUnsignedCharArray.h"
+#include "vtkWindow.h"
 
 vtkStandardNewMacro(vtkLegendScaleActor2);
-
 
 //----------------------------------------------------------------------
 vtkLegendScaleActor2::vtkLegendScaleActor2()
@@ -101,27 +100,39 @@ vtkLegendScaleActor2::vtkLegendScaleActor2()
     // Create the legend
     vtkIdType pts[4];
     this->LegendPoints->SetNumberOfPoints(10);
-    vtkCellArray *legendPolys = vtkCellArray::New();
-    legendPolys->Allocate(legendPolys->EstimateSize(4,4));
-    pts[0] = 0; pts[1] = 1; pts[2] = 6; pts[3] = 5;
-    legendPolys->InsertNextCell(4,pts);
-    pts[0] = 1; pts[1] = 2; pts[2] = 7; pts[3] = 6;
-    legendPolys->InsertNextCell(4,pts);
-    pts[0] = 2; pts[1] = 3; pts[2] = 8; pts[3] = 7;
-    legendPolys->InsertNextCell(4,pts);
-    pts[0] = 3; pts[1] = 4; pts[2] = 9; pts[3] = 8;
-    legendPolys->InsertNextCell(4,pts);
+    vtkCellArray* legendPolys = vtkCellArray::New();
+    legendPolys->Allocate(legendPolys->EstimateSize(4, 4));
+    pts[0] = 0;
+    pts[1] = 1;
+    pts[2] = 6;
+    pts[3] = 5;
+    legendPolys->InsertNextCell(4, pts);
+    pts[0] = 1;
+    pts[1] = 2;
+    pts[2] = 7;
+    pts[3] = 6;
+    legendPolys->InsertNextCell(4, pts);
+    pts[0] = 2;
+    pts[1] = 3;
+    pts[2] = 8;
+    pts[3] = 7;
+    legendPolys->InsertNextCell(4, pts);
+    pts[0] = 3;
+    pts[1] = 4;
+    pts[2] = 9;
+    pts[3] = 8;
+    legendPolys->InsertNextCell(4, pts);
     this->Legend->SetPolys(legendPolys);
     legendPolys->Delete();
 
     // Create the cell data
-    vtkUnsignedCharArray *colors = vtkUnsignedCharArray::New();
+    vtkUnsignedCharArray* colors = vtkUnsignedCharArray::New();
     colors->SetNumberOfComponents(3);
     colors->SetNumberOfTuples(4);
-    colors->SetTuple3(0,0,0,0);
-    colors->SetTuple3(1,255,255,255);
-    colors->SetTuple3(2,0,0,0);
-    colors->SetTuple3(3,255,255,255);
+    colors->SetTuple3(0, 0, 0, 0);
+    colors->SetTuple3(1, 255, 255, 255);
+    colors->SetTuple3(2, 0, 0, 0);
+    colors->SetTuple3(3, 255, 255, 255);
     this->Legend->GetCellData()->SetScalars(colors);
     colors->Delete();
 
@@ -142,8 +153,7 @@ vtkLegendScaleActor2::vtkLegendScaleActor2()
     this->LegendLabelProperty->SetShadow(1);
     this->LegendLabelProperty->SetFontFamilyToArial();
     this->LegendLabelProperty->SetFontSize(8);
-    for (int i=0; i<6; i++)
-    {
+    for (int i = 0; i < 6; i++) {
         this->LabelMappers[i] = vtkTextMapper::New();
         this->LabelMappers[i]->SetTextProperty(this->LegendLabelProperty);
         this->LabelActors[i] = vtkActor2D::New();
@@ -158,7 +168,7 @@ vtkLegendScaleActor2::vtkLegendScaleActor2()
 
     this->Coordinate = vtkCoordinate::New();
     this->Coordinate->SetCoordinateSystemToDisplay();
-    this->m_name="";
+    this->m_name = "";
 }
 
 //----------------------------------------------------------------------
@@ -174,8 +184,7 @@ vtkLegendScaleActor2::~vtkLegendScaleActor2()
     this->LegendMapper->Delete();
     this->LegendActor->Delete();
 
-    for (int i=0; i<6; i++)
-    {
+    for (int i = 0; i < 6; i++) {
         this->LabelMappers[i]->Delete();
         this->LabelActors[i]->Delete();
     }
@@ -185,7 +194,7 @@ vtkLegendScaleActor2::~vtkLegendScaleActor2()
 }
 
 //----------------------------------------------------------------------
-void vtkLegendScaleActor2::GetActors2D(vtkPropCollection *pc)
+void vtkLegendScaleActor2::GetActors2D(vtkPropCollection* pc)
 {
     pc->AddItem(this->RightAxis);
     pc->AddItem(this->TopAxis);
@@ -194,7 +203,7 @@ void vtkLegendScaleActor2::GetActors2D(vtkPropCollection *pc)
 }
 
 //----------------------------------------------------------------------
-void vtkLegendScaleActor2::ReleaseGraphicsResources(vtkWindow *w)
+void vtkLegendScaleActor2::ReleaseGraphicsResources(vtkWindow* w)
 {
     this->RightAxis->ReleaseGraphicsResources(w);
     this->TopAxis->ReleaseGraphicsResources(w);
@@ -203,36 +212,30 @@ void vtkLegendScaleActor2::ReleaseGraphicsResources(vtkWindow *w)
 
     this->LegendActor->ReleaseGraphicsResources(w);
 
-    for (int i=0; i<6; i++)
-    {
+    for (int i = 0; i < 6; i++) {
         this->LabelActors[i]->ReleaseGraphicsResources(w);
     }
 }
 
 //----------------------------------------------------------------------
-int vtkLegendScaleActor2::RenderOpaqueGeometry(vtkViewport *viewport)
+int vtkLegendScaleActor2::RenderOpaqueGeometry(vtkViewport* viewport)
 {
     this->BuildRepresentation(viewport);
 
-    int renderedSomething=0;
-    if ( this->RightAxisVisibility )
-    {
+    int renderedSomething = 0;
+    if (this->RightAxisVisibility) {
         renderedSomething = this->RightAxis->RenderOpaqueGeometry(viewport);
     }
-    if ( this->TopAxisVisibility )
-    {
+    if (this->TopAxisVisibility) {
         renderedSomething += this->TopAxis->RenderOpaqueGeometry(viewport);
     }
-    if ( this->LeftAxisVisibility )
-    {
+    if (this->LeftAxisVisibility) {
         renderedSomething += this->LeftAxis->RenderOpaqueGeometry(viewport);
     }
-    if ( this->BottomAxisVisibility )
-    {
+    if (this->BottomAxisVisibility) {
         renderedSomething += this->BottomAxis->RenderOpaqueGeometry(viewport);
     }
-    if ( this->LegendVisibility )
-    {
+    if (this->LegendVisibility) {
         renderedSomething += this->LegendActor->RenderOpaqueGeometry(viewport);
         renderedSomething += this->LabelActors[0]->RenderOpaqueGeometry(viewport);
         renderedSomething += this->LabelActors[1]->RenderOpaqueGeometry(viewport);
@@ -246,27 +249,22 @@ int vtkLegendScaleActor2::RenderOpaqueGeometry(vtkViewport *viewport)
 }
 
 //----------------------------------------------------------------------
-int vtkLegendScaleActor2::RenderOverlay(vtkViewport *viewport)
+int vtkLegendScaleActor2::RenderOverlay(vtkViewport* viewport)
 {
-    int renderedSomething=0;
-    if ( this->RightAxisVisibility )
-    {
+    int renderedSomething = 0;
+    if (this->RightAxisVisibility) {
         renderedSomething = this->RightAxis->RenderOverlay(viewport);
     }
-    if ( this->TopAxisVisibility )
-    {
+    if (this->TopAxisVisibility) {
         renderedSomething += this->TopAxis->RenderOverlay(viewport);
     }
-    if ( this->LeftAxisVisibility )
-    {
+    if (this->LeftAxisVisibility) {
         renderedSomething += this->LeftAxis->RenderOverlay(viewport);
     }
-    if ( this->BottomAxisVisibility )
-    {
+    if (this->BottomAxisVisibility) {
         renderedSomething += this->BottomAxis->RenderOverlay(viewport);
     }
-    if ( this->LegendVisibility )
-    {
+    if (this->LegendVisibility) {
         renderedSomething += this->LegendActor->RenderOverlay(viewport);
         renderedSomething += this->LabelActors[0]->RenderOverlay(viewport);
         renderedSomething += this->LabelActors[1]->RenderOverlay(viewport);
@@ -279,185 +277,161 @@ int vtkLegendScaleActor2::RenderOverlay(vtkViewport *viewport)
     return renderedSomething;
 }
 
-
 //----------------------------------------------------------------------
-void vtkLegendScaleActor2::SetFitsFileName(std::string name) {
-
+void vtkLegendScaleActor2::SetFitsFileName(std::string name)
+{
 
     if (name.empty()) {
-        vtkErrorMacro(<<"Null Datafile!");
+        vtkErrorMacro(<< "Null Datafile!");
         return;
     }
 
-
-    m_name= name;
+    m_name = name;
     this->Modified();
-    
-
-
 }
 
 //----------------------------------------------------------------------
-void vtkLegendScaleActor2::BuildRepresentation(vtkViewport *viewport)
+void vtkLegendScaleActor2::BuildRepresentation(vtkViewport* viewport)
 {
-    if ( 1 ) //it's probably best just to rerender every time
-        //   if ( this->GetMTime() > this->BuildTime ||
-        //        (this->Renderer && this->Renderer->GetVTKWindow() &&
-        //         this->Renderer->GetVTKWindow()->GetMTime() > this->BuildTime) )
+    if (1) //it's probably best just to rerender every time
+    //   if ( this->GetMTime() > this->BuildTime ||
+    //        (this->Renderer && this->Renderer->GetVTKWindow() &&
+    //         this->Renderer->GetVTKWindow()->GetMTime() > this->BuildTime) )
     {
         // Specify the locations of the axes.
-        int *size = viewport->GetSize();
+        int* size = viewport->GetSize();
 
-        this->RightAxis->GetPositionCoordinate()-> SetValue(size[0]-this->RightBorderOffset, this->CornerOffsetFactor*this->BottomBorderOffset,0.0);
-        this->RightAxis->GetPosition2Coordinate()->SetValue(size[0]-this->RightBorderOffset, size[1]-this->CornerOffsetFactor*this->TopBorderOffset,0.0);
-        this->TopAxis->GetPositionCoordinate()->
-                SetValue(size[0]-this->CornerOffsetFactor*this->RightBorderOffset,
-                size[1]-this->TopBorderOffset,0.0);
-        this->TopAxis->GetPosition2Coordinate()->
-                SetValue(this->CornerOffsetFactor*this->LeftBorderOffset,
-                         size[1]-this->TopBorderOffset,0.0);
+        this->RightAxis->GetPositionCoordinate()->SetValue(size[0] - this->RightBorderOffset, this->CornerOffsetFactor * this->BottomBorderOffset, 0.0);
+        this->RightAxis->GetPosition2Coordinate()->SetValue(size[0] - this->RightBorderOffset, size[1] - this->CornerOffsetFactor * this->TopBorderOffset, 0.0);
+        this->TopAxis->GetPositionCoordinate()->SetValue(size[0] - this->CornerOffsetFactor * this->RightBorderOffset,
+            size[1] - this->TopBorderOffset, 0.0);
+        this->TopAxis->GetPosition2Coordinate()->SetValue(this->CornerOffsetFactor * this->LeftBorderOffset,
+            size[1] - this->TopBorderOffset, 0.0);
 
-        this->LeftAxis->GetPositionCoordinate()->
-                SetValue(this->LeftBorderOffset,
-                         size[1]-this->CornerOffsetFactor*this->TopBorderOffset,0.0);
-        this->LeftAxis->GetPosition2Coordinate()->
-                SetValue(this->LeftBorderOffset,
-                         this->CornerOffsetFactor*this->BottomBorderOffset,0.0);
+        this->LeftAxis->GetPositionCoordinate()->SetValue(this->LeftBorderOffset,
+            size[1] - this->CornerOffsetFactor * this->TopBorderOffset, 0.0);
+        this->LeftAxis->GetPosition2Coordinate()->SetValue(this->LeftBorderOffset,
+            this->CornerOffsetFactor * this->BottomBorderOffset, 0.0);
 
-        if ( this->LegendVisibility )
-        {
-            this->BottomAxis->GetPositionCoordinate()->
-                    SetValue(this->CornerOffsetFactor*this->LeftBorderOffset,
-                             2*this->BottomBorderOffset,0.0);
-            this->BottomAxis->GetPosition2Coordinate()->
-                    SetValue(size[0]-this->CornerOffsetFactor*this->RightBorderOffset,
-                    2*this->BottomBorderOffset,0.0);
+        if (this->LegendVisibility) {
+            this->BottomAxis->GetPositionCoordinate()->SetValue(this->CornerOffsetFactor * this->LeftBorderOffset,
+                2 * this->BottomBorderOffset, 0.0);
+            this->BottomAxis->GetPosition2Coordinate()->SetValue(size[0] - this->CornerOffsetFactor * this->RightBorderOffset,
+                2 * this->BottomBorderOffset, 0.0);
+        } else {
+            this->BottomAxis->GetPositionCoordinate()->SetValue(this->CornerOffsetFactor * this->LeftBorderOffset,
+                this->BottomBorderOffset, 0.0);
+            this->BottomAxis->GetPosition2Coordinate()->SetValue(size[0] - this->CornerOffsetFactor * this->RightBorderOffset,
+                this->BottomBorderOffset, 0.0);
         }
-        else
-        {
-            this->BottomAxis->GetPositionCoordinate()->
-                    SetValue(this->CornerOffsetFactor*this->LeftBorderOffset,
-                             this->BottomBorderOffset,0.0);
-            this->BottomAxis->GetPosition2Coordinate()->
-                    SetValue(size[0]-this->CornerOffsetFactor*this->RightBorderOffset,
-                    this->BottomBorderOffset,0.0);
-        }
-
 
         // Now specify the axis values
-        if ( this->LabelMode == XY_COORDINATES )
-        {
+        if (this->LabelMode == XY_COORDINATES) {
 
-            double *sky_coord_gal = new double[2];
-            double lo,up;
+            double* sky_coord_gal = new double[2];
+            double lo, up;
 
-            double *xL = this->RightAxis->GetPositionCoordinate()-> GetComputedWorldValue(viewport);
-            double *xR = this->RightAxis->GetPosition2Coordinate()-> GetComputedWorldValue(viewport);
+            double* xL = this->RightAxis->GetPositionCoordinate()->GetComputedWorldValue(viewport);
+            double* xR = this->RightAxis->GetPosition2Coordinate()->GetComputedWorldValue(viewport);
 
-            AstroUtils().xy2sky(m_name,xR[1],xL[1],sky_coord_gal,3);
-            lo=sky_coord_gal[1];
+            AstroUtils().xy2sky(m_name, xR[1], xL[1], sky_coord_gal, 3);
+            lo = sky_coord_gal[1];
 
-            AstroUtils().xy2sky(m_name,xL[1],xR[1],sky_coord_gal,3);
-            up=sky_coord_gal[1];
+            AstroUtils().xy2sky(m_name, xL[1], xR[1], sky_coord_gal, 3);
+            up = sky_coord_gal[1];
 
-           this->RightAxis->SetRange(lo,up);
+            this->RightAxis->SetRange(lo, up);
 
-            xL = this->LeftAxis->GetPositionCoordinate()-> GetComputedWorldValue(viewport);
-            xR = this->LeftAxis->GetPosition2Coordinate()-> GetComputedWorldValue(viewport);
-            this->LeftAxis->SetRange(up,lo);
+            xL = this->LeftAxis->GetPositionCoordinate()->GetComputedWorldValue(viewport);
+            xR = this->LeftAxis->GetPosition2Coordinate()->GetComputedWorldValue(viewport);
+            this->LeftAxis->SetRange(up, lo);
 
-            xL = this->TopAxis->GetPositionCoordinate()-> GetComputedWorldValue(viewport);
-            xR = this->TopAxis->GetPosition2Coordinate()-> GetComputedWorldValue(viewport);
+            xL = this->TopAxis->GetPositionCoordinate()->GetComputedWorldValue(viewport);
+            xR = this->TopAxis->GetPosition2Coordinate()->GetComputedWorldValue(viewport);
 
             xL = this->BottomAxis->GetPositionCoordinate()->GetComputedWorldValue(viewport);
             xR = this->BottomAxis->GetPosition2Coordinate()->GetComputedWorldValue(viewport);
 
-            AstroUtils().xy2sky(m_name,xL[0],xR[0],sky_coord_gal,3);
-            lo=sky_coord_gal[0];
+            AstroUtils().xy2sky(m_name, xL[0], xR[0], sky_coord_gal, 3);
+            lo = sky_coord_gal[0];
 
-            AstroUtils().xy2sky(m_name,xR[0],xL[0],sky_coord_gal,3);
-            up=sky_coord_gal[0];
+            AstroUtils().xy2sky(m_name, xR[0], xL[0], sky_coord_gal, 3);
+            up = sky_coord_gal[0];
 
-
-            this->BottomAxis->SetRange(lo,up);
+            this->BottomAxis->SetRange(lo, up);
             this->TopAxis->SetRange(up, lo);
 
-
-        }
-        else //distance between points
+        } else //distance between points
         {
             double d;
 
-            double *xL = this->RightAxis->GetPositionCoordinate()->
-                    GetComputedWorldValue(viewport);
-            double *xR = this->RightAxis->GetPosition2Coordinate()->
-                    GetComputedWorldValue(viewport);
-            d = sqrt (vtkMath::Distance2BetweenPoints(xL,xR));
-            this->RightAxis->SetRange(-d/2.0,d/2.0);
+            double* xL = this->RightAxis->GetPositionCoordinate()->GetComputedWorldValue(viewport);
+            double* xR = this->RightAxis->GetPosition2Coordinate()->GetComputedWorldValue(viewport);
+            d = sqrt(vtkMath::Distance2BetweenPoints(xL, xR));
+            this->RightAxis->SetRange(-d / 2.0, d / 2.0);
 
-            xL = this->TopAxis->GetPositionCoordinate()->
-                    GetComputedWorldValue(viewport);
-            xR = this->TopAxis->GetPosition2Coordinate()->
-                    GetComputedWorldValue(viewport);
-            d = sqrt (vtkMath::Distance2BetweenPoints(xL,xR));
-            this->TopAxis->SetRange(d/2.0,-d/2.0);
+            xL = this->TopAxis->GetPositionCoordinate()->GetComputedWorldValue(viewport);
+            xR = this->TopAxis->GetPosition2Coordinate()->GetComputedWorldValue(viewport);
+            d = sqrt(vtkMath::Distance2BetweenPoints(xL, xR));
+            this->TopAxis->SetRange(d / 2.0, -d / 2.0);
 
-            xL = this->LeftAxis->GetPositionCoordinate()->
-                    GetComputedWorldValue(viewport);
-            xR = this->LeftAxis->GetPosition2Coordinate()->
-                    GetComputedWorldValue(viewport);
-            d = sqrt (vtkMath::Distance2BetweenPoints(xL,xR));
-            this->LeftAxis->SetRange(d/2.0,-d/2.0);
+            xL = this->LeftAxis->GetPositionCoordinate()->GetComputedWorldValue(viewport);
+            xR = this->LeftAxis->GetPosition2Coordinate()->GetComputedWorldValue(viewport);
+            d = sqrt(vtkMath::Distance2BetweenPoints(xL, xR));
+            this->LeftAxis->SetRange(d / 2.0, -d / 2.0);
 
-            xL = this->BottomAxis->GetPositionCoordinate()->
-                    GetComputedWorldValue(viewport);
-            xR = this->BottomAxis->GetPosition2Coordinate()->
-                    GetComputedWorldValue(viewport);
-            d = sqrt (vtkMath::Distance2BetweenPoints(xL,xR));
-            this->BottomAxis->SetRange(-d/2.0,d/2.0);
+            xL = this->BottomAxis->GetPositionCoordinate()->GetComputedWorldValue(viewport);
+            xR = this->BottomAxis->GetPosition2Coordinate()->GetComputedWorldValue(viewport);
+            d = sqrt(vtkMath::Distance2BetweenPoints(xL, xR));
+            this->BottomAxis->SetRange(-d / 2.0, d / 2.0);
         }
 
-        if ( this->LegendVisibility )
-        {
+        if (this->LegendVisibility) {
             // Update the position
-            double x1 = 0.33333*size[0];
-            double delX = x1/4.0;
+            double x1 = 0.33333 * size[0];
+            double delX = x1 / 4.0;
 
-            this->LegendPoints->SetPoint(0, x1,10,0);
-            this->LegendPoints->SetPoint(1, x1+delX,10,0);
-            this->LegendPoints->SetPoint(2, x1+2*delX,10,0);
-            this->LegendPoints->SetPoint(3, x1+3*delX,10,0);
-            this->LegendPoints->SetPoint(4, x1+4*delX,10,0);
-            this->LegendPoints->SetPoint(5, x1,20,0);
-            this->LegendPoints->SetPoint(6, x1+delX,20,0);
-            this->LegendPoints->SetPoint(7, x1+2*delX,20,0);
-            this->LegendPoints->SetPoint(8, x1+3*delX,20,0);
-            this->LegendPoints->SetPoint(9, x1+4*delX,20,0);
+            this->LegendPoints->SetPoint(0, x1, 10, 0);
+            this->LegendPoints->SetPoint(1, x1 + delX, 10, 0);
+            this->LegendPoints->SetPoint(2, x1 + 2 * delX, 10, 0);
+            this->LegendPoints->SetPoint(3, x1 + 3 * delX, 10, 0);
+            this->LegendPoints->SetPoint(4, x1 + 4 * delX, 10, 0);
+            this->LegendPoints->SetPoint(5, x1, 20, 0);
+            this->LegendPoints->SetPoint(6, x1 + delX, 20, 0);
+            this->LegendPoints->SetPoint(7, x1 + 2 * delX, 20, 0);
+            this->LegendPoints->SetPoint(8, x1 + 3 * delX, 20, 0);
+            this->LegendPoints->SetPoint(9, x1 + 4 * delX, 20, 0);
 
             // Specify the position of the legend title
-            this->LabelActors[5]->SetPosition(0.5*size[0],22);
-            this->Coordinate->SetValue(0.33333*size[0],15,0.0);
-            double *x = this->Coordinate->GetComputedWorldValue(viewport);
-            double xL[3]; xL[0]=x[0];xL[1]=x[1];xL[2]=x[2];
-            this->Coordinate->SetValue(0.66667*size[0],15,0.0);
+            this->LabelActors[5]->SetPosition(0.5 * size[0], 22);
+            this->Coordinate->SetValue(0.33333 * size[0], 15, 0.0);
+            double* x = this->Coordinate->GetComputedWorldValue(viewport);
+            double xL[3];
+            xL[0] = x[0];
+            xL[1] = x[1];
+            xL[2] = x[2];
+            this->Coordinate->SetValue(0.66667 * size[0], 15, 0.0);
             x = this->Coordinate->GetComputedWorldValue(viewport);
-            double xR[3]; xR[0]=x[0];xR[1]=x[1];xR[2]=x[2];
-            double len = sqrt(vtkMath::Distance2BetweenPoints(xL,xR));
+            double xR[3];
+            xR[0] = x[0];
+            xR[1] = x[1];
+            xR[2] = x[2];
+            double len = sqrt(vtkMath::Distance2BetweenPoints(xL, xR));
             char buf[256];
-            sprintf(buf,"Scale 1 : %g",len);
+            sprintf(buf, "Scale 1 : %g", len);
             this->LabelMappers[5]->SetInput(buf);
 
             // Now specify the position of the legend labels
             x = this->LegendPoints->GetPoint(0);
-            this->LabelActors[0]->SetPosition(x[0],x[1]-1);
+            this->LabelActors[0]->SetPosition(x[0], x[1] - 1);
             x = this->LegendPoints->GetPoint(1);
-            this->LabelActors[1]->SetPosition(x[0],x[1]-1);
+            this->LabelActors[1]->SetPosition(x[0], x[1] - 1);
             x = this->LegendPoints->GetPoint(2);
-            this->LabelActors[2]->SetPosition(x[0],x[1]-1);
+            this->LabelActors[2]->SetPosition(x[0], x[1] - 1);
             x = this->LegendPoints->GetPoint(3);
-            this->LabelActors[3]->SetPosition(x[0],x[1]-1);
+            this->LabelActors[3]->SetPosition(x[0], x[1] - 1);
             x = this->LegendPoints->GetPoint(4);
-            this->LabelActors[4]->SetPosition(x[0],x[1]-1);
+            this->LabelActors[4]->SetPosition(x[0], x[1] - 1);
         }
 
         this->BuildTime.Modified();
@@ -467,10 +441,7 @@ void vtkLegendScaleActor2::BuildRepresentation(vtkViewport *viewport)
 //----------------------------------------------------------------------
 void vtkLegendScaleActor2::AllAnnotationsOn()
 {
-    if ( this->RightAxisVisibility && this->TopAxisVisibility &&
-         this->LeftAxisVisibility && this->BottomAxisVisibility &&
-         this->LegendVisibility )
-    {
+    if (this->RightAxisVisibility && this->TopAxisVisibility && this->LeftAxisVisibility && this->BottomAxisVisibility && this->LegendVisibility) {
         return;
     }
 
@@ -486,10 +457,7 @@ void vtkLegendScaleActor2::AllAnnotationsOn()
 //----------------------------------------------------------------------
 void vtkLegendScaleActor2::AllAnnotationsOff()
 {
-    if ( !this->RightAxisVisibility && !this->TopAxisVisibility &&
-         !this->LeftAxisVisibility && !this->BottomAxisVisibility &&
-         !this->LegendVisibility )
-    {
+    if (!this->RightAxisVisibility && !this->TopAxisVisibility && !this->LeftAxisVisibility && !this->BottomAxisVisibility && !this->LegendVisibility) {
         return;
     }
 
@@ -505,9 +473,7 @@ void vtkLegendScaleActor2::AllAnnotationsOff()
 //----------------------------------------------------------------------
 void vtkLegendScaleActor2::AllAxesOn()
 {
-    if ( this->RightAxisVisibility && this->TopAxisVisibility &&
-         this->LeftAxisVisibility && this->BottomAxisVisibility )
-    {
+    if (this->RightAxisVisibility && this->TopAxisVisibility && this->LeftAxisVisibility && this->BottomAxisVisibility) {
         return;
     }
 
@@ -522,9 +488,7 @@ void vtkLegendScaleActor2::AllAxesOn()
 //----------------------------------------------------------------------
 void vtkLegendScaleActor2::AllAxesOff()
 {
-    if ( !this->RightAxisVisibility && !this->TopAxisVisibility &&
-         !this->LeftAxisVisibility && !this->BottomAxisVisibility )
-    {
+    if (!this->RightAxisVisibility && !this->TopAxisVisibility && !this->LeftAxisVisibility && !this->BottomAxisVisibility) {
         return;
     }
 
@@ -636,10 +600,9 @@ void vtkLegendScaleActor2::PrintSelf(ostream& os, vtkIndent indent)
 void vtkLegendScaleActor2::PrintHeader(ostream& os, vtkIndent indent)
 {
     // this->Superclass::PrintHeader(os, indent);
-
 }
 
-void vtkLegendScaleActor2::PrintTrailer(std::ostream& os , vtkIndent indent)
+void vtkLegendScaleActor2::PrintTrailer(std::ostream& os, vtkIndent indent)
 {
     // this->Superclass::PrintTrailer(os, indent);
 }

@@ -49,15 +49,16 @@ export default {
     },
   },
   actions: {
-    WS_CONNECT({ state, commit, dispatch }) {
+    WS_CONNECT({ state, commit, dispatch },token) {
       // Initiate network connection
+     
       const config = { application: 'cone' };
-
+      //alert(token);
       // Custom setup for development (http:8080 / ws:1234)
-      if (location.port === '80') {
+      if (location.port === '443') {
         // We suppose that we have dev server and that ParaView/VTK is running on port 1234
         //config.sessionURL = `ws://${location.hostname}:1234/ws`;
-        config.sessionURL="ws://${location.hostname}/proxy?sessionId=${id}&path=ws";
+        config.sessionURL="wss://${location.hostname}:443/proxy?sessionId=${id}&path=ws";
         // config.sessionURL = `ws://192.168.1.49:1234/ws`;
         //  config.sessionURL = `ws://visivo-server.oact.inaf.it:1234/ws`;
       }
@@ -102,19 +103,21 @@ export default {
           connectImageStream(validClient.getConnection().getSession());
           commit('WS_CLIENT_SET', validClient);
           clientToConnect.endBusy();
+          
 
           // Now that the client is ready let's setup the server for us
-          dispatch('WS_INITIALIZE_SERVER');
+          dispatch('WS_INITIALIZE_SERVER',token);
         })
         .catch((error) => {
           console.error(error);
         });
     },
-    WS_INITIALIZE_SERVER({ state }) {
+    WS_INITIALIZE_SERVER({ state },token) {
+     
       if (state.client) {
         state.client
           .getRemote()
-          .VLWBase.createVisualization()
+          .VLWBase.createVisualization(token)
           .catch(console.error);
       }
     },
@@ -183,8 +186,25 @@ export default {
           .catch(console.error);
       }
     },
+    
+    WS_UPDATE_TOKEN({ state }, t) {
+        
+        if (state.client) {
+           // var t0 = performance.now();
+           
+           //clientToConnect.beginBusy();
+           //console.log(t)
+           state.client
+             .getRemote()
+             .VLWBase.setToken(t)
+             .catch(console.error);
+         }
+       },
+       
     WS_FITS_UPDATE({ state }, url) {
       if (state.client) {
+        /*
+         * //Initial before plug for broken database
         state.client.getRemote().VLWBase.updateFits(url).then(
         function() {
           //TODO: load datacube data
@@ -193,13 +213,41 @@ export default {
             //alert(state.dc_params[3]);
           
             return state.dc_params;
-            //https://stackoverflow.com/questions/59699813/vuetify-data-table-and-binding-data-coming-from-json-object - get a table from json
-            //also https://codepen.io/isogunro/pen/VQRoax
+           
           })
           
           }
                      
-          );
+          );*/
+        //
+        
+        state.client
+                state.client.getRemote().VLWBase.updateFits(url)
+                .then((result) => {
+                  if(!result) return alert("No datacube, the old data would be kept");
+                  else{
+                   // .then(
+                   //     function() {
+                          //TODO: load datacube data
+                          state.client.getRemote().VLWBase.getDataCubeData().then((result) => {
+                            state.dc_params = result;
+                            //alert(state.dc_params[3]);
+                          
+                            return state.dc_params;
+                            //https://stackoverflow.com/questions/59699813/vuetify-data-table-and-binding-data-coming-from-json-object - get a table from json
+                            //also https://codepen.io/isogunro/pen/VQRoax
+                          })
+                         // state.client.getRemote().VLWBase.updateResolution(5);
+                         //   return alert("Done");
+                       // });
+                    
+                  }
+        
+                  
+                  //https://stackoverflow.com/questions/59699813/vuetify-data-table-and-binding-data-coming-from-json-object - get a table from json
+                  //also https://codepen.io/isogunro/pen/VQRoax
+                })
+              //
       }
     },
     WS_UPDATE_XMLFITS({ state }, res) {

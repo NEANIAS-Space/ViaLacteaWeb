@@ -34,12 +34,12 @@
 #ifndef vtkLegendScaleActor2_h
 #define vtkLegendScaleActor2_h
 
-#include "vtkRenderingAnnotationModule.h" // For export macro
-#include "vtkProp.h"
 #include "vtkCoordinate.h" // For vtkViewportCoordinateMacro
-#include "vtkSmartPointer.h"
 #include "vtkFitsReader.h"
 #include "vtkImageActor.h"
+#include "vtkProp.h"
+#include "vtkRenderingAnnotationModule.h" // For export macro
+#include "vtkSmartPointer.h"
 
 class vtkAxisActor2D;
 class vtkTextProperty;
@@ -50,171 +50,168 @@ class vtkTextMapper;
 class vtkPoints;
 class vtkCoordinate;
 
-class VTK_EXPORT vtkLegendScaleActor2 : public vtkProp
-{
+class VTK_EXPORT vtkLegendScaleActor2 : public vtkProp {
 public:
-  // Description:
-  // Instantiate the class.
-  static vtkLegendScaleActor2 *New();
- 
-  void SetFitsFileName(std::string name);
-  void SetName(){};
-  // Description:
-  // Standard methods for the class.
-  vtkTypeMacro(vtkLegendScaleActor2,vtkProp);
- // void PrintSelf(ostream& os, vtkIndent indent);
-  void PrintHeader(ostream& os, vtkIndent indent) override;
-  void PrintTrailer(std::ostream& os , vtkIndent indent) override;
-  void PrintSelf(ostream& os, vtkIndent indent) override;
-//BTX
-  enum AttributeLocation
-  {
-    DISTANCE=0,
-    XY_COORDINATES=1
-  };
-//ETX
+    // Description:
+    // Instantiate the class.
+    static vtkLegendScaleActor2* New();
 
-  // Description:
-  // Specify the mode for labeling the scale axes. By default, the axes are
-  // labeled with the distance between points (centered at a distance of
-  // 0.0). Alternatively if you know that the view is down the z-axis; the
-  // axes can be labeled with x-y coordinate values.
-  vtkSetClampMacro(LabelMode,int,DISTANCE,XY_COORDINATES);
-  vtkGetMacro(LabelMode,int);
-  void SetLabelModeToDistance() {this->SetLabelMode(DISTANCE);}
-  void SetLabelModeToXYCoordinates() {this->SetLabelMode(XY_COORDINATES);}
+    void SetFitsFileName(std::string name);
+    void SetName() {};
+    // Description:
+    // Standard methods for the class.
+    vtkTypeMacro(vtkLegendScaleActor2, vtkProp);
+    // void PrintSelf(ostream& os, vtkIndent indent);
+    void PrintHeader(ostream& os, vtkIndent indent) override;
+    void PrintTrailer(std::ostream& os, vtkIndent indent) override;
+    void PrintSelf(ostream& os, vtkIndent indent) override;
+    //BTX
+    enum AttributeLocation {
+        DISTANCE = 0,
+        XY_COORDINATES = 1
+    };
+    //ETX
 
-  // Description:
-  // Set/Get the flags that control which of the four axes to display (top,
-  // bottom, left and right). By default, all the axes are displayed.
-  vtkSetMacro(RightAxisVisibility,int);
-  vtkGetMacro(RightAxisVisibility,int);
-  vtkBooleanMacro(RightAxisVisibility,int);
-  vtkSetMacro(TopAxisVisibility,int);
-  vtkGetMacro(TopAxisVisibility,int);
-  vtkBooleanMacro(TopAxisVisibility,int);
-  vtkSetMacro(LeftAxisVisibility,int);
-  vtkGetMacro(LeftAxisVisibility,int);
-  vtkBooleanMacro(LeftAxisVisibility,int);
-  vtkSetMacro(BottomAxisVisibility,int);
-  vtkGetMacro(BottomAxisVisibility,int);
-  vtkBooleanMacro(BottomAxisVisibility,int);
+    // Description:
+    // Specify the mode for labeling the scale axes. By default, the axes are
+    // labeled with the distance between points (centered at a distance of
+    // 0.0). Alternatively if you know that the view is down the z-axis; the
+    // axes can be labeled with x-y coordinate values.
+    vtkSetClampMacro(LabelMode, int, DISTANCE, XY_COORDINATES);
+    vtkGetMacro(LabelMode, int);
+    void SetLabelModeToDistance() { this->SetLabelMode(DISTANCE); }
+    void SetLabelModeToXYCoordinates() { this->SetLabelMode(XY_COORDINATES); }
 
-  // Description:
-  // Indicate whether the legend scale should be displayed or not.
-  // The default is On.
-  vtkSetMacro(LegendVisibility,int);
-  vtkGetMacro(LegendVisibility,int);
-  vtkBooleanMacro(LegendVisibility,int);
+    // Description:
+    // Set/Get the flags that control which of the four axes to display (top,
+    // bottom, left and right). By default, all the axes are displayed.
+    vtkSetMacro(RightAxisVisibility, int);
+    vtkGetMacro(RightAxisVisibility, int);
+    vtkBooleanMacro(RightAxisVisibility, int);
+    vtkSetMacro(TopAxisVisibility, int);
+    vtkGetMacro(TopAxisVisibility, int);
+    vtkBooleanMacro(TopAxisVisibility, int);
+    vtkSetMacro(LeftAxisVisibility, int);
+    vtkGetMacro(LeftAxisVisibility, int);
+    vtkBooleanMacro(LeftAxisVisibility, int);
+    vtkSetMacro(BottomAxisVisibility, int);
+    vtkGetMacro(BottomAxisVisibility, int);
+    vtkBooleanMacro(BottomAxisVisibility, int);
 
-  // Description:
-  // Convenience method that turns all the axes either on or off.
-  void AllAxesOn();
-  void AllAxesOff();
+    // Description:
+    // Indicate whether the legend scale should be displayed or not.
+    // The default is On.
+    vtkSetMacro(LegendVisibility, int);
+    vtkGetMacro(LegendVisibility, int);
+    vtkBooleanMacro(LegendVisibility, int);
 
-  // Description:
-  // Convenience method that turns all the axes and the legend scale.
-  void AllAnnotationsOn();
-  void AllAnnotationsOff();
+    // Description:
+    // Convenience method that turns all the axes either on or off.
+    void AllAxesOn();
+    void AllAxesOff();
 
-  // Description:
-  // Set/Get the offset of the right axis from the border. This number is expressed in
-  // pixels, and represents the approximate distance of the axes from the sides
-  // of the renderer. The default is 50.
-  vtkSetClampMacro(RightBorderOffset,int,5,VTK_INT_MAX);
-  vtkGetMacro(RightBorderOffset,int);
+    // Description:
+    // Convenience method that turns all the axes and the legend scale.
+    void AllAnnotationsOn();
+    void AllAnnotationsOff();
 
-  // Description:
-  // Set/Get the offset of the top axis from the border. This number is expressed in
-  // pixels, and represents the approximate distance of the axes from the sides
-  // of the renderer. The default is 30.
-  vtkSetClampMacro(TopBorderOffset,int,5,VTK_INT_MAX);
-  vtkGetMacro(TopBorderOffset,int);
+    // Description:
+    // Set/Get the offset of the right axis from the border. This number is expressed in
+    // pixels, and represents the approximate distance of the axes from the sides
+    // of the renderer. The default is 50.
+    vtkSetClampMacro(RightBorderOffset, int, 5, VTK_INT_MAX);
+    vtkGetMacro(RightBorderOffset, int);
 
-  // Description:
-  // Set/Get the offset of the left axis from the border. This number is expressed in
-  // pixels, and represents the approximate distance of the axes from the sides
-  // of the renderer. The default is 50.
-  vtkSetClampMacro(LeftBorderOffset,int,5,VTK_INT_MAX);
-  vtkGetMacro(LeftBorderOffset,int);
+    // Description:
+    // Set/Get the offset of the top axis from the border. This number is expressed in
+    // pixels, and represents the approximate distance of the axes from the sides
+    // of the renderer. The default is 30.
+    vtkSetClampMacro(TopBorderOffset, int, 5, VTK_INT_MAX);
+    vtkGetMacro(TopBorderOffset, int);
 
-  // Description:
-  // Set/Get the offset of the bottom axis from the border. This number is expressed in
-  // pixels, and represents the approximate distance of the axes from the sides
-  // of the renderer. The default is 30.
-  vtkSetClampMacro(BottomBorderOffset,int,5,VTK_INT_MAX);
-  vtkGetMacro(BottomBorderOffset,int);
+    // Description:
+    // Set/Get the offset of the left axis from the border. This number is expressed in
+    // pixels, and represents the approximate distance of the axes from the sides
+    // of the renderer. The default is 50.
+    vtkSetClampMacro(LeftBorderOffset, int, 5, VTK_INT_MAX);
+    vtkGetMacro(LeftBorderOffset, int);
 
-  // Description:
-  // Get/Set the corner offset. This is the offset factor used to offset the
-  // axes at the corners. Default value is 2.0.
-  vtkSetClampMacro(CornerOffsetFactor, double, 1.0, 10.0);
-  vtkGetMacro(CornerOffsetFactor, double);
+    // Description:
+    // Set/Get the offset of the bottom axis from the border. This number is expressed in
+    // pixels, and represents the approximate distance of the axes from the sides
+    // of the renderer. The default is 30.
+    vtkSetClampMacro(BottomBorderOffset, int, 5, VTK_INT_MAX);
+    vtkGetMacro(BottomBorderOffset, int);
 
-  // Description:
-  // Set/Get the labels text properties for the legend title and labels.
-  vtkGetObjectMacro(LegendTitleProperty,vtkTextProperty);
-  vtkGetObjectMacro(LegendLabelProperty,vtkTextProperty);
+    // Description:
+    // Get/Set the corner offset. This is the offset factor used to offset the
+    // axes at the corners. Default value is 2.0.
+    vtkSetClampMacro(CornerOffsetFactor, double, 1.0, 10.0);
+    vtkGetMacro(CornerOffsetFactor, double);
 
-  // Description:
-  // These are methods to retrieve the vtkAxisActors used to represent
-  // the four axes that form this representation. Users may retrieve and
-  // then modify these axes to control their appearance.
-  vtkGetObjectMacro(RightAxis,vtkAxisActor2D);
-  vtkGetObjectMacro(TopAxis,vtkAxisActor2D);
-  vtkGetObjectMacro(LeftAxis,vtkAxisActor2D);
-  vtkGetObjectMacro(BottomAxis,vtkAxisActor2D);
+    // Description:
+    // Set/Get the labels text properties for the legend title and labels.
+    vtkGetObjectMacro(LegendTitleProperty, vtkTextProperty);
+    vtkGetObjectMacro(LegendLabelProperty, vtkTextProperty);
 
-  // Decsription:
-  // Standard methods supporting the rendering process.
-  virtual void BuildRepresentation(vtkViewport *viewport);
-  virtual void GetActors2D(vtkPropCollection*);
-  virtual void ReleaseGraphicsResources(vtkWindow*);
-  virtual int RenderOverlay(vtkViewport*);
-  virtual int RenderOpaqueGeometry(vtkViewport*);
+    // Description:
+    // These are methods to retrieve the vtkAxisActors used to represent
+    // the four axes that form this representation. Users may retrieve and
+    // then modify these axes to control their appearance.
+    vtkGetObjectMacro(RightAxis, vtkAxisActor2D);
+    vtkGetObjectMacro(TopAxis, vtkAxisActor2D);
+    vtkGetObjectMacro(LeftAxis, vtkAxisActor2D);
+    vtkGetObjectMacro(BottomAxis, vtkAxisActor2D);
+
+    // Decsription:
+    // Standard methods supporting the rendering process.
+    virtual void BuildRepresentation(vtkViewport* viewport);
+    virtual void GetActors2D(vtkPropCollection*);
+    virtual void ReleaseGraphicsResources(vtkWindow*);
+    virtual int RenderOverlay(vtkViewport*);
+    virtual int RenderOpaqueGeometry(vtkViewport*);
 
 protected:
-  vtkLegendScaleActor2();
-  ~vtkLegendScaleActor2();
+    vtkLegendScaleActor2();
+    ~vtkLegendScaleActor2();
 
-  std::string m_name;
-  int    LabelMode;
-  int    RightBorderOffset;
-  int    TopBorderOffset;
-  int    LeftBorderOffset;
-  int    BottomBorderOffset;
-  double CornerOffsetFactor;
+    std::string m_name;
+    int LabelMode;
+    int RightBorderOffset;
+    int TopBorderOffset;
+    int LeftBorderOffset;
+    int BottomBorderOffset;
+    double CornerOffsetFactor;
 
-  // The four axes around the borders of the renderer
-  vtkAxisActor2D *RightAxis;
-  vtkAxisActor2D *TopAxis;
-  vtkAxisActor2D *LeftAxis;
-  vtkAxisActor2D *BottomAxis;
+    // The four axes around the borders of the renderer
+    vtkAxisActor2D* RightAxis;
+    vtkAxisActor2D* TopAxis;
+    vtkAxisActor2D* LeftAxis;
+    vtkAxisActor2D* BottomAxis;
 
-  // Control the display of the axes
-  int RightAxisVisibility;
-  int TopAxisVisibility;
-  int LeftAxisVisibility;
-  int BottomAxisVisibility;
+    // Control the display of the axes
+    int RightAxisVisibility;
+    int TopAxisVisibility;
+    int LeftAxisVisibility;
+    int BottomAxisVisibility;
 
-  // Support for the legend.
-  int                  LegendVisibility;
-  vtkPolyData         *Legend;
-  vtkPoints           *LegendPoints;
-  vtkPolyDataMapper2D *LegendMapper;
-  vtkActor2D          *LegendActor;
-  vtkTextMapper       *LabelMappers[6];
-  vtkActor2D          *LabelActors[6];
-  vtkTextProperty     *LegendTitleProperty;
-  vtkTextProperty     *LegendLabelProperty;
-  vtkCoordinate       *Coordinate;
+    // Support for the legend.
+    int LegendVisibility;
+    vtkPolyData* Legend;
+    vtkPoints* LegendPoints;
+    vtkPolyDataMapper2D* LegendMapper;
+    vtkActor2D* LegendActor;
+    vtkTextMapper* LabelMappers[6];
+    vtkActor2D* LabelActors[6];
+    vtkTextProperty* LegendTitleProperty;
+    vtkTextProperty* LegendLabelProperty;
+    vtkCoordinate* Coordinate;
 
-  vtkTimeStamp         BuildTime;
+    vtkTimeStamp BuildTime;
 
 private:
-  vtkLegendScaleActor2(const vtkLegendScaleActor2&);  //Not implemented
-  void operator=(const vtkLegendScaleActor2&);  //Not implemented
-  
+    vtkLegendScaleActor2(const vtkLegendScaleActor2&); //Not implemented
+    void operator=(const vtkLegendScaleActor2&); //Not implemented
 };
 
 #endif

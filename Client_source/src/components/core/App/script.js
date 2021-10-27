@@ -31,6 +31,7 @@ export default {
       myImage: require('@/assets/OPEN_LOCAL.png'),
 
       right: null,
+      
 
       //GetInitial data
       singleSelect: true,
@@ -78,6 +79,7 @@ export default {
       connect: 'WS_CONNECT',
       loadData: 'CONE_XMLFITS_UPDATE',
       loadDataShort: 'WS_FITS_UPDATE',
+      updateToken: 'WS_UPDATE_TOKEN',
       setP1: 'CONE_SETP1',
       setP2: 'CONE_SETP2',
       setR1: 'CONE_SETR1',
@@ -85,6 +87,9 @@ export default {
       setDb: 'CONE_SETDB',
       setCameraView: 'CONE_SETCAMERAVIEW',
       setRotate: 'CONE_SETROTATE',
+
+      
+     
     }),
     onSetCamera() {
       //this.dialog=true;
@@ -101,6 +106,30 @@ export default {
         .then(response => response.json())
         .then(data => (this.items = data));*/
     },
+    onLoadToken()
+    {
+      //getTokenId
+      
+      var token=this.$oidc.accessToken;
+      //alert(token);
+      var s=this.$oidc.authName;
+      console.log("Update token timeout")
+      console.log(s);
+      this.updateToken(token);
+      this.$oidc.resetUpdate(); //set back to false
+    },
+    checkToken()
+       {
+         //getTokenId
+         
+        var s=this.$oidc.needsUpdate;
+        //alert(s)
+        if(s)
+        {
+          setTimeout(this.onLoadToken,2500);
+        }
+          
+       },
     onButtonClick(item) {
       this.mini = !this.mini;
       this.loadDataShort(item.url);
@@ -131,7 +160,18 @@ export default {
  //   }
       
   //  else{
-      this.connect();
+      //this.onLoadToken();
+      var token=this.$oidc.accessToken;
+      //this.callFunction();
+      //this.updateToken(token);
+      
+      this.connect(token);
+      setInterval(this.checkToken,1000);
+      //setInterval(this.onLoadToken,1500);
+      //setInterval(this.onLoadToken, 900000);
+      
+      //this.onLoadToken();
+      
  //   }
     
   },

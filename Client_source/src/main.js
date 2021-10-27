@@ -32,7 +32,11 @@ idsrvAuth.startup().then((ok) => {
       render: (h) => h(App),
     }).$mount('#app');
     console.log('Startup is set');
+    //alert (store)
+    
   } else {
     console.log('Startup was not ok');
   }
 });
+
+Vue.prototype.$store = store

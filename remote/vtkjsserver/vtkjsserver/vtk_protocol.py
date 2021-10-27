@@ -63,10 +63,15 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.WindowLevelInitial[1] = 0.5; # Level
         
         self.useContours=False;
+        self.path=""
+        self.token=""
         
     def updateScene(self, renderer, renWin):
         renderer.ResetCamera();
         renWin.GetInteractor().Render();
+    def SetPath(self, path):
+        self.path=path
+        print(self.path)
 
     def removeContour(self):
         
@@ -131,9 +136,14 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
    
        
         
-
+    @exportRpc("vtk.initialize.token")
+    def setToken(self,token):
+        self.token=token;
+        print(self.token);
+    
     @exportRpc("vtk.initialize")
-    def createVisualization(self):
+    def createVisualization(self,token):
+        print("start")
         #Get renwin and renderers
         renderWindow = self.getView('-1')
         self.renderWindow=renderWindow;
@@ -153,11 +163,16 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #First pipeline as described in 
         #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1386
         
-        
+        self.token=token;
+        print(token)
         fitsReader=self.fitsReader;
         
+        #uncoment for multiuser
+        fitsReader.SetTempPath(self.path)
+        fitsReader.SetSessionToken(self.token)
+        
         fitsReader.is3D=True;
-        fitsReader.GenerateVLKBUrl("0, 0,0.1,0.1");
+        fitsReader.GenerateVLKBUrl("40, 0,0.3,0.1");
         # fitsReader.SetFileName("../../data/vlkb-merged_3D_2021-03-08_10-39-11_837561_16774-16805.fits");
         fitsReader.CalculateRMS();
             
@@ -257,10 +272,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         renderer.AddActor(self.textActor);
         
         
-        #Set coordinates for reset camera 
-        # all actors where added to renderer for first pipeline above
-        self.cam_init_pos=renderer.GetActiveCamera( ).GetPosition();
-        self.cam_init_foc=renderer.GetActiveCamera( ).GetFocalPoint();
+        
        
         print(self.cam_init_pos)
         
@@ -345,12 +357,17 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         renderer.ResetCamera()
         renderer2.ResetCamera()
         
+        #Set coordinates for reset camera 
+        # all actors where added to renderer for first pipeline above
+        self.cam_init_pos=renderer.GetActiveCamera( ).GetPosition();
+        self.cam_init_foc=renderer.GetActiveCamera( ).GetFocalPoint();
+        
         renderWindow.Render()
         
         
+        self.resetCamera();  
 
-
-        return self.resetCamera()
+        return -1; #self.resetCamera()
         
 
     def ResetCam():
@@ -365,22 +382,24 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
     @exportRpc("vtk.cone.fits.update")
     def updateFits(self,url):
+        print("stat updating");
+        result=self.fitsReader.DownloadSurveyDataCube(url);
+        if result:
+           print("stat updating2");
+           self.fitsReader.CalculateRMS();
         
-        self.fitsReader.DownloadSurveyDataCube(url);
-        result= self.fitsReader.CalculateRMS();
+           fits=self.fitsReader.GetOutput();
+           bounds=fits.GetBounds()
         
-        fits=self.fitsReader.GetOutput();
-        bounds=fits.GetBounds()
+           self.textActor.SetInput(self.fitsReader.GetDataCubeData())
+           self.textActor.Modified();
+           self.textActor.GetMapper().Update()
         
-        self.textActor.SetInput(self.fitsReader.GetDataCubeData())
-        self.textActor.Modified();
-        self.textActor.GetMapper().Update()
-        
-        self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
-        self.frustumSource.Update()
-        print("Cube loaded")
+           self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
+           self.frustumSource.Update()
+           print("Cube loaded")
         #self.ResetCamera()
-        #print("Slice updated")
+        return result;
 
 
     @exportRpc("vtk.camera.reset")
@@ -388,18 +407,32 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         renderWindow = self.getView('-1')
         renderWindow.GetRenderers().GetFirstRenderer().ResetCamera()
         renderWindow.Render()
+        
+        camera = renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera();
+        renderer=renderWindow.GetRenderers().GetFirstRenderer()
+        
+        #camera.SetFocalPoint( self.cam_init_foc );
+        #camera.SetPosition( self.cam_init_pos);
+        
         #renderWindow.GetRenderers().GetFirstRenderer().SetViewUp( 0, 1, 0 );
-        renderWindow.GetRenderers().GetFirstRenderer().SetFocalPoint( self.cam_init_foc );
-        renderWindow.GetRenderers().GetFirstRenderer().SetPosition( self.cam_init_pos);
+        #renderWindow.GetRenderers().GetFirstRenderer().SetFocalPoint( self.cam_init_foc );
+        #renderWindow.GetRenderers().GetFirstRenderer().SetPosition( self.cam_init_pos);
 
         self.getApplication().InvalidateCache(renderWindow)
         self.getApplication().InvokeEvent('UpdateEvent')
 
+         #Set coordinates for reset camera 
+        # all actors where added to renderer for first pipeline above
+        #self.cam_init_pos=camera.GetPosition();
+        #self.cam_init_foc=camera.GetFocalPoint();
         return -1
         
     @exportRpc("vtk.cone.url")
     def loadURL(self):
         print("FitsReader callse");
+        self.fitsReader.SetSessionToken(self.token)
+
+        self.fitsReader.is3D=True;
         self.fitsReader.GenerateVLKBUrl("10, 0,0.3,0.2");
         self.fitsReader.CalculateRMS();
         renderWindow = self.getView('-1')
@@ -414,7 +447,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         # str_p=str(p1)+","+str(p2);
         # str_r=str(r1)+","+str(r2);
         print(res);
-       
+        self.fitsReader.SetSessionToken(self.token)
+
+        self.fitsReader.is3D=True;
+        print(self.token);
         
         self.fitsReader.GenerateVLKBUrl(res);
         result= self.fitsReader.CalculateRMS();

@@ -74,7 +74,15 @@ class _Server(vtk_wslink.ServerProtocol):
             vtk_override_protocols.vtkWebPublishImageDelivery(decode=False))
 
         # vlw API
-        self.registerVtkWebProtocol(vlwBase())
+        #self.registerVtkWebProtocol(vlwBase())
+        
+        self.vlw_app=vlwBase()
+        self.registerVtkWebProtocol(self.vlw_app)
+        path_val=str(args.updir)+str(args.session);
+        os.mkdir(path_val)
+        self.vlw_app.SetPath(path_val);
+
+        # tell the C++ web app to use no encoding.
 
         # tell the C++ web app to use no encoding.
         # ParaViewWebPublishImageDelivery must be set to decode=False to match.

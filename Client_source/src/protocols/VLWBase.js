@@ -1,7 +1,7 @@
 /* eslint-disable arrow-body-style */
 export default function createMethods(session) {
   return {
-    createVisualization: () => session.call('vtk.initialize', []),
+    createVisualization: (token) => session.call('vtk.initialize', [token]),
     loadURL: () => session.call('vtk.cone.url', []),
     resetCamera: () => session.call('vtk.camera.reset', []),
     updateResolution: (resolution) =>
@@ -21,6 +21,9 @@ export default function createMethods(session) {
     loadXMLFITS: (res) =>
                  session.call('vtk.cone.urlfits', [res]),
                  
-    getDataCubeData:() => session.call('vtk.cone.loadcubedata', []),            
+    getDataCubeData:() => session.call('vtk.cone.loadcubedata', []),
+    
+    setToken: (t) =>
+      session.call('vtk.initialize.token', [t]),
       };
 }

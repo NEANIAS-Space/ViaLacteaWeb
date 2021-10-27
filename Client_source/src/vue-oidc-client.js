@@ -1,5 +1,7 @@
+import { mapGetters, mapActions } from 'vuex';
 import Vue from 'vue';
 import { Log, UserManager, WebStorageStateStore } from 'oidc-client';
+import store from 'vlw-base/src/store';
 /**
  * Indicates the sign in behavior.
  */
@@ -81,19 +83,27 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
         redirect_uri: `${appUrl}${nameSlug}`,
         popup_post_logout_redirect_uri: `${appUrl}auth/signoutpop/${nameSlug}`,
         popup_redirect_uri: `${appUrl}auth/signinpop/${nameSlug}`,
-        silent_redirect_uri: `${appUrl}auth/signinsilent/${nameSlug}`,
+        silent_redirect_uri: `${appUrl}${nameSlug}`,
         ...oidcConfig // everything can be overridden!
     };
     Log.debug(`Creating new oidc auth as ${authName}`);
     const mgr = new UserManager(config);
     let _inited = false;
     const auth = new Vue({
+        store,  
         data() {
             return {
                 user: null,
-                myRouter: null
+                myRouter: null,
+                store:null,
+                needs_update:false
             };
         },
+        created: () => {
+            //this.store=store;
+       
+               //console.log(store);
+           },
         computed: {
             appUrl() {
                 return appUrl;
@@ -106,6 +116,9 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
             },
             accessToken() {
                 return !!this.user && !this.user.expired ? this.user.access_token : '';
+            },
+            needsUpdate() {
+                return this.needs_update;
             },
             userProfile() {
                 return !!this.user && !this.user.expired
@@ -123,6 +136,14 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
             }
         },
         methods: {
+           ...mapActions({            
+             updateToken: 'WS_UPDATE_TOKEN',
+             }),
+            updateToken2(){
+             //  console.log(this.$store)
+           },
+            resetUpdate(){this.needs_update=false;},
+            
             startup() {
                 let isCB = false; // CB = callback
                 if (matchesPath(config.popup_redirect_uri)) {
@@ -130,11 +151,13 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
                     mgr.signinPopupCallback();
                     isCB = true;
                 }
-                else if (matchesPath(config.silent_redirect_uri)) {
-                    Log.debug(`${authName} Silent signin callback`);
-                    mgr.signinSilentCallback();
-                    isCB = true;
-                }
+               // else if (matchesPath(config.silent_redirect_uri)) {
+               //     Log.debug(`${authName} Silent signin callback`);
+               //     alert("Call of silent redirect")
+               //     mgr.signinSilentCallback();
+                //    
+               //     isCB = true;
+               // }
                 else if (matchesPath(config.popup_post_logout_redirect_uri)) {
                     Log.debug(`${authName} Popup logout callback`);
                     mgr.signoutPopupCallback();
@@ -153,7 +176,17 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
                         _inited = true;
                         if (test && !test.expired) {
                             this.user = test;
+                            console.log("Stat")
+                            console.log(this.user.profile)
+                            //console.log(this.$store);
+                            //this.updateToken();
+                            //this.$store.state.wslink.dispatch('WS_UPDATE_TOKEN',this.user.access_token);
+                           //this.updateToken(this.user.access_token);
+                           // alert("token callsed")
+                            //VLWBase.setToken(this.user.access_token);
+                            
                         }
+                        
                         return true;
                     })
                         .catch(err => {
@@ -257,7 +290,7 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
                     // auth.myRouter()
                 })
                     .catch(() => {
-                    setTimeout(signInIfNecessary, 5000);
+                    setTimeout(signInIfNecessary, 500000);
                 });
                 // window.location.reload();
                 // auth.myRouter.go(); //replace('/');
@@ -268,8 +301,9 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
         switch (type) {
             case SignInType.Popup:
                 return mgr.signinPopup(args);
-            // case SignInType.Silent:
-            //   return mgr.signinSilent(args)
+             case SignInType.Silent:
+                 //alert("start silent")
+               return mgr.signinSilent(args)
         }
         return mgr.signinRedirect(args);
     }
@@ -292,6 +326,8 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
     function handleManagerEvents() {
         mgr.events.addUserLoaded(user => {
             auth.user = user;
+           // alert("user.access_token");
+           // VLWBase.setToken(user.access_token);
         });
         mgr.events.addUserUnloaded(() => {
             auth.user = null;
@@ -299,9 +335,15 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
             Log.debug(`${auth.authName} auth user unloaded`);
             signInIfNecessary();
         });
+        mgr.events.addAccessTokenExpiring(() => {
+            //setTimeout(alert("about to expire"),600);
+            auth.needs_update=true; //needs update
+        });
+        
         mgr.events.addAccessTokenExpired(() => {
             Log.debug(`${auth.authName} auth token expired, user is authenticated=${auth.isAuthenticated}`);
             auth.user = null;
+            //alert("token expired")
             signInIfNecessary();
             // if (auth.isAuthenticated) {
             //   mgr
@@ -324,7 +366,7 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
                 setTimeout(() => {
                     Log.debug(`${auth.authName} auth silent renew retry`);
                     mgr.signinSilent();
-                }, 5000);
+                }, 500000);
             }
             else {
                 signInIfNecessary();
@@ -377,3 +419,4 @@ function slugify(str) {
     return str;
 }
 //# sourceMappingURL=vue-oidc-client.js.map
+
