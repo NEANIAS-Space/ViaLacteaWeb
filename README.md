@@ -15,5 +15,6 @@ The main requirements are:
 - Access to the VLKB service through the NEANIAS Service Management System (SMS) (see [section 1](#_yxqmzovmjunh))
 
 The service demo video is available at [https://youtu.be/F6Q4xiMbHqg](https://youtu.be/F6Q4xiMbHqg)
+The user documentation is avalable [here](./docs/User documentation.pdf) 
 
 
