@@ -1,0 +1,25 @@
+
+PROJECT_NAME           = "ViaLacteaWeb"
+
+
+PROJECT_NUMBER         = 1.0
+
+
+OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@/doc_doxygen/
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/src/vtkFitsReader.cxx \
+@CMAKE_CURRENT_SOURCE_DIR@/src/vtkFitsReader.h \
+@CMAKE_CURRENT_SOURCE_DIR@/docs/user.md
+
+FILE_PATTERNS          = *.h *.hpp *.cxx *.cpp *.txt *.md
+
+TOC_INCLUDE_HEADINGS =YES
+
+MARKDOWN_SUPPORT=YES
+
+RECURSIVE              = YES
+
+USE_MDFILE_AS_MAINPAGE = @CMAKE_CURRENT_SOURCE_DIR@/docs/user.md"
+
+IMAGE_PATH = @CMAKE_CURRENT_SOURCE_DIR@/docs/images
+
+

@@ -1,0 +1,22 @@
+NAME
+  VTK::VIALACTEA
+LIBRARY_NAME
+  vtkVialactea
+GROUPS
+  StandAlone
+DEPENDS
+  VTK::CommonCore
+  VTK::CommonDataModel
+  VTK::CommonExecutionModel
+  VTK::RenderingOpenGL2
+  VTK::RenderingCore
+  VTK::RenderingAnnotation
+  VTK::IOImage
+PRIVATE_DEPENDS
+  VTK::CommonMisc
+  VTK::ImagingCore
+  VTK::CommonMath
+  VTK::CommonSystem
+  VTK::CommonTransforms
+  VTK::IOCore
+
