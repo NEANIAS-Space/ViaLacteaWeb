@@ -79,6 +79,7 @@ export default {
       connect: 'WS_CONNECT',
       loadData: 'CONE_XMLFITS_UPDATE',
       loadDataShort: 'WS_FITS_UPDATE',
+      keyLogOut: 'WS_LOGOUT',
       updateToken: 'WS_UPDATE_TOKEN',
       setP1: 'CONE_SETP1',
       setP2: 'CONE_SETP2',

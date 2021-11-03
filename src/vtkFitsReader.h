@@ -31,6 +31,9 @@ public:
     {
         m_token = token;
     }
+    /* For log out*/
+    bool LogOut();
+
 
     bool GenerateVLKBUrl(std::string data);
     bool DownloadSurveyDataCube(std::string urlString);

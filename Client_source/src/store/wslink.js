@@ -127,6 +127,11 @@ export default {
         state.client.getRemote().VLWBase.loadURL().catch(console.error);
       }
     },
+    WS_LOGOUT({ state }) {
+     if (state.client) {
+      state.client.getRemote().VLWBase.LogOut().catch(console.error);
+    }
+    },
     WS_UPDATE_RESOLUTION({ state }, resolution) {
       if (state.client) {
         // var t0 = performance.now();

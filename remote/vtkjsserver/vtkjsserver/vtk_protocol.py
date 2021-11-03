@@ -140,6 +140,12 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
     def setToken(self,token):
         self.token=token;
         print(self.token);
+
+    @exportRpc("vtk.initialize.LogOut")
+    def LogOut(self):
+        v=self.fitsReader.LogOut()
+        print(v);
+
     
     @exportRpc("vtk.initialize")
     def createVisualization(self,token):

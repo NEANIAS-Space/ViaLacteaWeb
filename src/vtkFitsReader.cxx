@@ -67,9 +67,9 @@ bool vtkFitsReader::DownloadSurveyDataCube(std::string str_u)
         const char* url2 = doc2.FirstChildElement("results")->FirstChildElement("URL")->GetText();
 
         //For some reason had to remove whitespace manually
-        std::string str = std::string(url2);
-        std::string::iterator end_pos = std::remove(str.begin(), str.end(), ' ');
-        str.erase(end_pos, str.end());
+        //std::string str = std::string(url2);
+        //std::string::iterator end_pos = std::remove(str.begin(), str.end(), ' ');
+        //str.erase(end_pos, str.end());
 
         //fill datacube info data
 
@@ -91,9 +91,30 @@ bool vtkFitsReader::DownloadSurveyDataCube(std::string str_u)
         m_dataCubeDesc += " \n";
         m_dataCubeDesc += cut;
 
-        std::cout << str.c_str() << std::endl;
+        //cleaning Fits url
+        std::string str_u = std::string(url2);
+        std::string::iterator end_pos = std::remove(str_u.begin(), str_u.end(), ' ');
+        str_u.erase(end_pos, str_u.end());
+        ///std::string::iterator end_pos_u = std::remove(str_u.begin(), str_u.end(), ' ');
+        //str_u.erase(end_pos_u, str_u.end());
+        //std::replace(str_u.begin(), str_u.end()," ","%20");
+        //str_u.replace(s.find("$name"), sizeof("$name") - 1, "Somename");
+        auto ps = str_u.find(" ");
+        while (ps != std::string::npos) {
+            str_u.replace(ps, 1, "%20");
+            ps = str_u.find(" ");
+        }
+        ps = str_u.find("+");
+        while (ps != std::string::npos) {
+            str_u.replace(ps, 1, "%2B");
+            ps = str_u.find("+");
+        }
 
-        bool res = DownloadFITSFromUrl(str);
+        std::cout << str_u.c_str() << std::endl;
+
+
+
+        bool res = DownloadFITSFromUrl(str_u);
         if (!res)
             std::cout << "Corupted fits" << std::endl;
         return res;
@@ -415,6 +436,79 @@ bool vtkFitsReader::DownloadFile(std::string url, std::string outName)
         /* always cleanup */
         curl_easy_cleanup(curl);
         fclose(fp);
+        return true;
+    }
+    return false;
+}
+
+//----------------------------------------------------------------------------
+bool vtkFitsReader::LogOut()
+{
+    CURL* curl;
+    FILE* fp;
+    CURLcode res;
+    curl = curl_easy_init();
+    std::string client_id="vlkb";
+    std::string client_url="https://sso.neanias.eu/auth/realms/neanias-production/protocol/openid-connect/logout";
+    std::string client_secret="b6f98dba-a409-432a-bb21-13b692d86172";
+    if (curl) {
+
+
+
+        curl_easy_setopt(curl, CURLOPT_URL, client_url.c_str());
+
+
+        struct curl_slist* headers = NULL;
+        headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
+
+
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+        std::ostringstream oss;
+
+                oss << "client_id =";
+                char *encoded = curl_easy_escape(curl, client_id.c_str(), 'client_id.length());
+                if (encoded)
+                {
+                    oss << encoded;
+                    curl_free(encoded);
+                }
+
+                oss << "&client_secret =";
+                encoded = curl_easy_escape(curl, client_secret.c_str(), client_secret.length());
+                if (encoded)
+                {
+                    oss << encoded;
+                    curl_free(encoded);
+                }
+        oss << "&refresh_token =";
+                encoded = curl_easy_escape(curl, m_token.c_str(), m_token.length());
+                if (encoded)
+                {
+                    oss << encoded;
+                    curl_free(encoded);
+                }
+
+
+                std::string postdata = oss.str();
+               // curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
+
+
+          /* size of the POST data */
+          curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postdata.length());
+
+          curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
+
+        curl_easy_setopt(curl, CURLOPT_FAILONERROR, true);
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK) {
+            std::cout << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+            return false;
+        }
+
+        /* always cleanup */
+        curl_easy_cleanup(curl);
+
         return true;
     }
     return false;
