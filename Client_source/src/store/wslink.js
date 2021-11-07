@@ -129,7 +129,7 @@ export default {
     },
     WS_LOGOUT({ state }) {
      if (state.client) {
-      state.client.getRemote().VLWBase.LogOut().catch(console.error);
+      state.client.getRemote().VLWBase.logOut().catch(console.error);
     }
     },
     WS_UPDATE_RESOLUTION({ state }, resolution) {

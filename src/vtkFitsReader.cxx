@@ -460,39 +460,47 @@ bool vtkFitsReader::LogOut()
 
         struct curl_slist* headers = NULL;
         headers = curl_slist_append(headers, "Content-Type: application/x-www-form-urlencoded");
+std::string token_str = "Authorization: Bearer ";
+        token_str += m_token;
+        // the actual code has the actual t
+        headers = curl_slist_append(headers, token_str.c_str());
 
 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
         std::ostringstream oss;
 
-                oss << "client_id =";
-                char *encoded = curl_easy_escape(curl, client_id.c_str(), 'client_id.length());
+                oss << "client_id=";
+                char *encoded = curl_easy_escape(curl, client_id.c_str(), client_id.length());
                 if (encoded)
                 {
                     oss << encoded;
                     curl_free(encoded);
                 }
+    //oss<< client_id.c_str();
 
-                oss << "&client_secret =";
+                oss << "&client_secret=";
                 encoded = curl_easy_escape(curl, client_secret.c_str(), client_secret.length());
                 if (encoded)
                 {
                     oss << encoded;
                     curl_free(encoded);
                 }
-        oss << "&refresh_token =";
-                encoded = curl_easy_escape(curl, m_token.c_str(), m_token.length());
+//oss<<client_secret.c_str();
+        oss << "&refresh_token=";
+               encoded = curl_easy_escape(curl, m_token.c_str(), m_token.length());
                 if (encoded)
-                {
+               {
                     oss << encoded;
                     curl_free(encoded);
                 }
-
+//oss<<m_token.c_str();
 
                 std::string postdata = oss.str();
-               // curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
-
+std::cout<<postdata.c_str()<<std::endl;  
+             // curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
+curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
+curl_easy_setopt(curl, CURLOPT_POST, 1);
 
           /* size of the POST data */
           curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postdata.length());
@@ -500,6 +508,7 @@ bool vtkFitsReader::LogOut()
           curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
 
         curl_easy_setopt(curl, CURLOPT_FAILONERROR, true);
+std::cout<<"Start curl"<<std::endl;
         res = curl_easy_perform(curl);
         if (res != CURLE_OK) {
             std::cout << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
