@@ -31,6 +31,7 @@ export default {
       myImage: require('@/assets/OPEN_LOCAL.png'),
 
       right: null,
+      rtoken:'',
       
 
       //GetInitial data
@@ -119,6 +120,18 @@ export default {
       this.updateToken(token);
       this.$oidc.resetUpdate(); //set back to false
     },
+    onLogOut()
+    {
+      //getTokenId
+
+
+      //alert(token);
+      //var s=this.$oidc.authName;
+      console.log("Log out start")
+      //alert(this.rtoken);
+      this.keyLogOut(this.rtoken);
+      this.$oidc.resetUpdate(); //set back to false
+    },
     checkToken()
        {
          //getTokenId
@@ -163,6 +176,8 @@ export default {
   //  else{
       //this.onLoadToken();
       var token=this.$oidc.accessToken;
+      this.rtoken=this.$oidc.refreshToken;
+
       //this.callFunction();
       //this.updateToken(token);
       

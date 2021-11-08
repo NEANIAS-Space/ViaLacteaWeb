@@ -2,7 +2,7 @@
 export default function createMethods(session) {
   return {
     createVisualization: (token) => session.call('vtk.initialize', [token]),
-    logOut:() => session.call("vtk.initialize.logout", []),
+    logOut:(rtoken) => session.call("vtk.initialize.logout", [rtoken]),
     loadURL: () => session.call('vtk.cone.url', []),
     resetCamera: () => session.call('vtk.camera.reset', []),
     updateResolution: (resolution) =>

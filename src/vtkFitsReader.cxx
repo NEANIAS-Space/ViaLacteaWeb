@@ -463,7 +463,7 @@ bool vtkFitsReader::LogOut()
 std::string token_str = "Authorization: Bearer ";
         token_str += m_token;
         // the actual code has the actual t
-        headers = curl_slist_append(headers, token_str.c_str());
+        //headers = curl_slist_append(headers, token_str.c_str());
 
 
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -488,22 +488,33 @@ std::string token_str = "Authorization: Bearer ";
                 }
 //oss<<client_secret.c_str();
         oss << "&refresh_token=";
-               encoded = curl_easy_escape(curl, m_token.c_str(), m_token.length());
+               encoded = curl_easy_escape(curl, m_refreshToken.c_str(), m_refreshToken.length());
                 if (encoded)
                {
                     oss << encoded;
                     curl_free(encoded);
                 }
+  oss << "&grant_type=refresh_token";
+              // encoded = curl_easy_escape(curl, m_refresToken.c_str(), m_refreshToken.length());
+               // if (encoded)
+              // {
+                //    oss << encoded;
+                
+ //   curl_free(encoded);
+               // }
 //oss<<m_token.c_str();
 
                 std::string postdata = oss.str();
 std::cout<<postdata.c_str()<<std::endl;  
+std::cout<<"acces token"<<std::endl;
+std::cout<<m_token.c_str()<<std::endl;
+
              // curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
 curl_easy_setopt(curl, CURLOPT_VERBOSE, 1);
 curl_easy_setopt(curl, CURLOPT_POST, 1);
 
           /* size of the POST data */
-          curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postdata.length());
+          //curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, postdata.length());
 
           curl_easy_setopt(curl, CURLOPT_POSTFIELDS, postdata.c_str());
 

@@ -127,9 +127,9 @@ export default {
         state.client.getRemote().VLWBase.loadURL().catch(console.error);
       }
     },
-    WS_LOGOUT({ state }) {
+    WS_LOGOUT({ state },rtoken) {
      if (state.client) {
-      state.client.getRemote().VLWBase.logOut().catch(console.error);
+      state.client.getRemote().VLWBase.logOut(rtoken).catch(console.error);
     }
     },
     WS_UPDATE_RESOLUTION({ state }, resolution) {
