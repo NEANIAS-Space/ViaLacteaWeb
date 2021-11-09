@@ -127,10 +127,11 @@ export default {
 
       //alert(token);
       //var s=this.$oidc.authName;
-      console.log("Log out start")
+      //console.log("Log out start")
       //alert(this.rtoken);
       this.keyLogOut(this.rtoken);
       this.$oidc.resetUpdate(); //set back to false
+      this.$oidc.signOut();
     },
     checkToken()
        {

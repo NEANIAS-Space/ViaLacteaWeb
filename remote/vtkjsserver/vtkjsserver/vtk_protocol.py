@@ -133,8 +133,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         print("contours are set");
 
 
-   
-       
+           
         
     @exportRpc("vtk.initialize.token")
     def setToken(self,token):
@@ -142,10 +141,11 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         print(self.token);
 
     @exportRpc("vtk.initialize.logout")
-    def logOut(self):
-        self.fitsReader.LogOut()
-        print("Logout done");
-
+    def logOut(self,rtoken):
+        self.fitsReader.SetRefreshToken(rtoken);
+        print(rtoken);
+        self.fitsReader.LogOut();
+        print("logout done");
     
     @exportRpc("vtk.initialize")
     def createVisualization(self,token):
