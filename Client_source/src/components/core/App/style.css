@@ -10,6 +10,11 @@
   height: 0;
 }
 
+.switch-center {
+  display: flex;
+  justify-content: center;
+}
+
 /*Reversed input variant*/
 .v-input--reverse .v-input__slot {
   flex-direction: row-reverse;
@@ -50,9 +55,8 @@
 .switch {
   max-width: 100px;
   width: auto;
-  flex: 0;
-  padding-left: 20px;
-  padding-top: 20px !important;
+ 
+  
 }
 
 .v-btn-toggle > .v-btn.v-size--default {

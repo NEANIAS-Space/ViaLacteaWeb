@@ -55,10 +55,10 @@ export default {
       const config = { application: 'cone' };
       //alert(token);
       // Custom setup for development (http:8080 / ws:1234)
-      if (location.port === '443') {
+      if (location.port === '8080') {
         // We suppose that we have dev server and that ParaView/VTK is running on port 1234
-        //config.sessionURL = `ws://${location.hostname}:1234/ws`;
-        config.sessionURL="wss://${location.hostname}:443/proxy?sessionId=${id}&path=ws";
+        config.sessionURL = `ws://${location.hostname}:1234/ws`;
+       // config.sessionURL="wss://${location.hostname}:443/proxy?sessionId=${id}&path=ws";
         // config.sessionURL = `ws://192.168.1.49:1234/ws`;
         //  config.sessionURL = `ws://visivo-server.oact.inaf.it:1234/ws`;
       }
@@ -188,6 +188,18 @@ export default {
         state.client
           .getRemote()
           .VLWBase.updateRotateAxis(v)
+          .catch(console.error);
+      }
+    },
+    
+    WS_UPDATE_2D({ state }, v) {
+      if (state.client) {
+        // var t0 = performance.now();
+    
+        //clientToConnect.beginBusy();
+        state.client
+          .getRemote()
+          .VLWBase.updateDim(v)
           .catch(console.error);
       }
     },

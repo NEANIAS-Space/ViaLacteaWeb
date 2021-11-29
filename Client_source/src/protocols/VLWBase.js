@@ -19,6 +19,9 @@ export default function createMethods(session) {
     updateRotateAxis: (v) =>
       session.call('vtk.cone.rotate.update', [v]),
       
+    updateDim: (v) =>
+      session.call('vtk.cone.dim.update', [v]),
+      
     loadXMLFITS: (res) =>
                  session.call('vtk.cone.urlfits', [res]),
                  

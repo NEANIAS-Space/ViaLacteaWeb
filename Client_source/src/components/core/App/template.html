@@ -6,7 +6,7 @@
 
   <v-app-bar app shrink-on-scroll height="60" align="center"
       justify="center">
-<v-layout row wrap align-center>
+<v-layout row wrap align-center justify-center>
 <v-btn
            color="primary"
            text
@@ -16,7 +16,32 @@
          </v-btn>
 <v-spacer />
 
- <v-switch class="d-md-none" v-model="rotateX" v-on:change="setRotate" label="Rotate axis" />
+<v-flex xs3>
+         <v-layout row wrap justify-center align-center>
+          
+          <v-radio-group
+                       v-model="is2D"
+                       v-on:change="set2D"
+                       row
+                     >
+                       <v-radio
+                         label="2D"
+                         color="blue"
+                         value="0"
+                       ></v-radio>
+                       <v-radio
+                         label="3D"
+                         color="blue"
+                         value="1"
+                       ></v-radio>
+                       <v-radio
+                         label="2D/3D"
+                         color="blue"
+                         value="2"
+                       ></v-radio>
+                       </v-radio-group>
+          </v-layout>
+       </v-flex>
 
 
 
@@ -32,8 +57,8 @@
 
 
 
-<v-container style="width: 25%">
-<div class="d-none d-md-block" style="margin: 10px; padding: 0px;">
+<v-container style="width: 22%">
+<div class="d-none d-md-block" style="margin: 5px; padding: 0px;">
   <v-slider
  :label="ex1.label"
  thumb-label="always"
@@ -48,7 +73,7 @@
 
  <div class="d-md-none">
 
-         <v-text-field style="margin: 0px; padding: 0px; width: 80px"
+         <v-text-field style="margin: 0px; padding: 0px; width: 60px"
                  label="Threshold"
                  type="number"
                  :value="resolution"
@@ -65,8 +90,8 @@
 
 
 
-<v-container style="width: 25%">
-   <div class="d-none d-md-block" style="margin: 10px; padding: 0px;">
+<v-container style="width: 22%">
+   <div class="d-none d-md-block" style="margin: 5px; padding: 0px;">
      <v-slider
    :label="ex2.label"
    thumb-label="always"
@@ -85,7 +110,7 @@
 <div class="d-md-none">
 
 
-        <v-text-field style="margin: 0px; padding: 0px; width: 80px" class="' text-caption text-sm-body-2 text-md-body-1 text-lg-h6'"
+        <v-text-field style="margin: 0px; padding: 0px; width: 60px" class="' text-caption text-sm-body-2 text-md-body-1 text-lg-h6'"
                 label="Cut planes"
                 type="number"
                 :value="planes"
