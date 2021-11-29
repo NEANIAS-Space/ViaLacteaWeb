@@ -18,6 +18,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
     def __init__(self):
         #initialisation of main variables
         self.cone = vtk.vtkMarchingCubes();
+        # For data1 and data2 loading for 3D and 2D
         self.fitsReader = vtk.vtkVialactea.vtkFitsReader();
         self.fitsReader2 = vtk.vtkVialactea.vtkFitsReader();
         
@@ -25,9 +26,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.min=0.0;
         self.max=0.0;
         self.imageViewer = vtk.vtkImageViewer2();
-        #GetWindowLevel ()
-        #SetColorWindow (double s)
-        #SetColorLevel (double s)
+
+
         self.viewer  =vtk.vtkResliceImageViewer();
         self.sliceA = vtk.vtkActor();
         self.sliceE= vtk.vtkPlanes();
@@ -66,6 +66,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.useContours=False;
         self.path=""
         self.token=""
+        #Recent for 2D/3d/ and mixed window interface
         self.fitsWasRead=False;
         self.istwoD=False;
         self.istwoDLoaded=False;
@@ -78,14 +79,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.path=path
         print(self.path)
 
-    def removeContour(self):
-        
+    def removeContour(self):      
         self.Ren2.RemoveActor2D(self.currentContourActor);
     
-        #myParentVtkWindow->m_Ren1->RemoveActor2D(currentContourActorForMainWindow);
-        #myParentVtkWindow->ui->qVTK1->update();
-        #myParentVtkWindow->ui->qVTK1->renderWindow()->GetInteractor()->Render();
-        print("to impleent")
+
        
     
     
@@ -146,236 +143,13 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.token=token;
         print(self.token);
 
-    @exportRpc("vtk.initialize.fits")
-    def createVisualizationFits(self,token):
-        print("start")
-        #Get renwin and renderers
-        renderWindow = self.getView('-1')
-        self.renderWindow=renderWindow;
-        rends=renderWindow.GetRenderers()
-        it=rends.NewIterator()
-        renderer = rends.GetItemAsObject(0)
-        renderer2 = rends.GetItemAsObject(1)	
-        renderer2.SetBackground(0.21,0.23,0.25);
-        self.Ren1=renderer;
-        self.Ren2=renderer2;
-        
-         #Entry point to entire vis logic:
-        #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1328
-        
-        
-        
-        #First pipeline as described in 
-        #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1386
-        
-        self.token=token;
-        print(token)
-        fitsReader=self.fitsReader;
-        
-        #uncoment for multiuser
-        fitsReader.SetTempPath(self.path)
-        fitsReader.SetSessionToken(self.token)
-        
-        fitsReader.is3D=True;
-        #fitsReader.GenerateVLKBUrl("40, 0,0.3,0.1");
-        fitsReader.SetFileName("../../data/vlkb-merged_3D_2021-02-18_12-36-07_979531_16774-16806.fits");
-        fitsReader.CalculateRMS();
-            
-
-        self.max=fitsReader.GetMax();
-        self.min=fitsReader.GetMin();
-        self.rms=fitsReader.GetRMS();
-        
-        #outline
-        outlineF = vtk.vtkOutlineFilter();
-        outlineF.SetInputData(fitsReader.GetOutput());
-        
-        
-        outlineM = vtk.vtkPolyDataMapper();
-        outlineM.SetInputConnection(outlineF.GetOutputPort());
-        outlineM.ScalarVisibilityOff();
-
-        outlineA = vtk.vtkActor();
-        outlineA.SetMapper(outlineM);
-
-	#isosurface itself Marching cubes
-        shellE = self.cone
-        shellE.SetInputData(fitsReader.GetOutput())
-        shellE.ComputeNormalsOff();
-        shellE.SetValue(0, 3*fitsReader.GetRMS())
-        shellE.Update()
-        print("cellsNum=", shellE.GetOutput().GetNumberOfCells())
-        
-        shellM = vtk.vtkPolyDataMapper()
-        shellM.ScalarVisibilityOff();
-        shellA = vtk.vtkActor()
-
-        shellM.SetInputConnection(shellE.GetOutputPort())
-        shellA.SetMapper(shellM)
-        
-        shellA.GetProperty().SetColor(1.0, 0.5, 0.5);
 
         
-        # slice L1406
-        fits=fitsReader.GetOutput();
-        bounds=fits.GetBounds()
-        
-        self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
-       
-        self.frustumSource.ShowLinesOff();
-        self.frustumSource.SetPlanes(self.sliceE);
-        self.frustumSource.Update();
-        
-        
-        mapper2 = vtk.vtkPolyDataMapper();
-        mapper2.SetInputData(self.frustumSource.GetOutput());
-       
-        self.sliceA.SetMapper(mapper2);
-        
-        
-       
-        
-        
-        renderer.AddActor(self.sliceA)
-        renderer.AddActor(shellA)
-        renderer.AddActor(outlineA)
-        
-        # axes and coords L1420
-        axes=vtk.vtkAxesActor()
-        
-        vtkAxesWidget = vtk.vtkOrientationMarkerWidget();
-        vtkAxesWidget.SetInteractor(renderWindow.GetInteractor());
 
-        vtkAxesWidget.SetOrientationMarker(axes);
-
-        vtkAxesWidget.SetOutlineColor( 0.9300, 0.5700, 0.1300 );
-        vtkAxesWidget.SetViewport( 0.0, 0.0, 0.2, 0.2 );
-        vtkAxesWidget.SetEnabled(1);
-        vtkAxesWidget.InteractiveOff();
-        
-                
-        #TODO import custom legend
-        legendScaleActor3d =  vtk.vtkVialactea.vtkLegendScaleActor2();
-        legendScaleActor3d.LegendVisibilityOff();
-        legendScaleActor3d.SetFitsFileName(fitsReader.GetFileName());
-       
-        
-        renderer.AddActor(legendScaleActor3d);
-        #print("legend scale fits was set")
-       
-        
-        #add label
-        tprop = vtk.vtkTextProperty()
-        tprop.SetFontFamilyToArial()
-        tprop.SetFontSize(10)
-        tprop.BoldOff()
-        tprop.ShadowOff()
-        tprop.SetColor(1, 1, 1)
-        #self.textActor.SetDisplayPosition(205, 205)
-        #self.textActor.SetTextProperty(tprop);
-        self.textActor.SetInput(fitsReader.GetDataCubeData())
-        renderer.AddActor(self.textActor);
-        
-        
-        
-       
-        print(self.cam_init_pos)
-        
-        #getInteractorStyle info to check
-       
-        print("Interactor type") 
-        name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
-        print(name)
-        
-     
-        
-        #Second pipeline
-        
-        rMin=fitsReader.GetRangeSliceMin(0)
-        rMax=fitsReader.GetRangeSliceMax(0)
-        #print(rMin,rMax)
-        lut = vtk.vtkLookupTable();
-        lut.SetTableRange(rMin,rMax) 
-        lut.SetHueRange (0., 0.);
-        lut.SetSaturationRange (0., 0.);
-        lut.SetValueRange(0., 1.);
-        
-        lut.Build()
-        
-        #setVtkInteractorStyleImageContour(); L1473 - the setting of  vtk.vtkInteractorStyleImage()
-        #As described in https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L3173
-        #Left Mouse button triggers window level events
-        #CTRL Left Mouse spins the camera around its view plane normal
-        #SHIFT Left Mouse pans the camera
-        #CTRL SHIFT Left Mouse dollys (a positional zoom) the camera
-        #Middle mouse button pans the camera
-        #Right mouse button dollys the camera.
-        #SHIFT Right Mouse triggers pick events
-    
-        
-        self.viewer.SetRenderer(renderer2);
-        self.viewer.SetRenderWindow(renderWindow);
-        self.viewer.SetupInteractor(renderWindow.GetInteractor());
-        self.viewer.SetInputData(fits);
-        self.viewer.GetWindowLevel().SetOutputFormatToRGB();
-        self.viewer.GetWindowLevel().SetLookupTable(lut);
-        self.viewer.GetImageActor().InterpolateOff();
-        
-        
-        
-        self.viewer.SetSlice(1)
-        self.viewer.SetSlice(0)
-        
-        self.viewer.GetRenderer().ResetCamera()
-        
-        print("Interactor type2") 
-        name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
-        print(name)
-        
-        #istyle = vtk.vtkInteractorStyleTrackballCamera()
-        #self.renderWindow.GetInteractor().SetInteractorStyle(istyle)
-        #print("Interactor replaced with") 
-        #name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
-        #print(name)
-         
-         #NOTE: no need to allocate another one and read fits again
-        #legendScaleActorImage =  vtk.vtkVialactea.vtkLegendScaleActor2();
-        #legendScaleActorImage.LegendVisibilityOff();
-        #legendScaleActor3d.SetFitsFileName(fitsReader.GetFileName());
-        #legendScaleActorImage.setFitsFile(myfits);
-        renderer2.AddActor(legendScaleActor3d);
-        
-        #updateScene();
-        
-        self.renderWindow.Render()
-       
-         
-       
-        camera = self.Ren1.GetActiveCamera()
-        camera.SetViewUp( 0, 1, 0 )
-        
-        if self.useContours:
-           self.goContour();
-
-        
-        
-        renderer.ResetCamera()
-        renderer2.ResetCamera()
-        
-        #Set coordinates for reset camera 
-        # all actors where added to renderer for first pipeline above
-        self.cam_init_pos=renderer.GetActiveCamera( ).GetPosition();
-        self.cam_init_foc=renderer.GetActiveCamera( ).GetFocalPoint();
-        
-        renderWindow.Render()
-        
-        
-        self.resetCamera();  
-
-        return -1; #self.resetCamera()
-        
     def init2DPipe(self):
-        
+        #2D case 0 pipeline as described in
+        #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1218
+
         self.setFits2D()
         self.Set2DPipeWindowActors()
         self.istwoDLoaded=True;
@@ -403,8 +177,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.fitsWasRead2=True;
         
     def Set2DPipeWindowActors(self):         
-        #Second pipeline
-        #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/fce9cd964fa311afdf27353f0b6bc21918e5e603/Code/src/vtkwindow_new.cpp#L1178
+        #Second pipeline for 2D window
         renderer3=self.Ren3;
         
         rMin=self.fitsReader2.GetRangeSliceMin(0)
@@ -448,24 +221,24 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         imageSliceBase = vtk.vtkImageSlice();
         
         imageSliceBase.SetMapper(imageSliceMapperBase);
-        print("11")
+
         imageSliceBase.GetProperty().SetInterpolationTypeToNearest();
         
         imageSliceBase.GetProperty().SetLayerNumber(0);
 
-        print("12")
 
-        # Stack
-        imageStack = vtk.vtkImageStack();
-        imageStack.AddImage(imageSliceBase);
+
+        # Image Stack that will store all 2D images
+        self.imageStack = vtk.vtkImageStack();
+        self.imageStack.AddImage(imageSliceBase);
 
 
         self.legendScaleActor3d2 =  vtk.vtkVialactea.vtkLegendScaleActor2();
         self.legendScaleActor3d2.LegendVisibilityOff();
         self.legendScaleActor3d2.SetFitsFileName(self.fitsReader2.GetFileName());
-        print("13")
+
         renderer3.AddActor(self.legendScaleActor3d2);
-        renderer3.AddViewProp(imageStack);
+        renderer3.AddViewProp(self.imageStack);
         renderer3.ResetCamera();
 
         #addLayer(imageObject);
