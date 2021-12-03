@@ -19,6 +19,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #initialisation of main variables
         self.cone = vtk.vtkMarchingCubes();
         self.fitsReader = vtk.vtkVialactea.vtkFitsReader();
+        self.fitsReader2 = vtk.vtkVialactea.vtkFitsReader();
         
         self.rms=0.0;
         self.min=0.0;
@@ -65,6 +66,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.useContours=False;
         self.path=""
         self.token=""
+        self.fitsWasRead=False;
+        self.istwoD=False;
+        self.istwoDLoaded=False;
+        self.istreeDLoaded=False;
         
     def updateScene(self, renderer, renWin):
         renderer.ResetCamera();
@@ -77,11 +82,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
         self.Ren2.RemoveActor2D(self.currentContourActor);
     
-        #myParentVtkWindow->m_Ren1->RemoveActor2D(currentContourActorForMainWindow);
-        #myParentVtkWindow->ui->qVTK1->update();
-        #myParentVtkWindow->ui->qVTK1->renderWindow()->GetInteractor()->Render();
-        print("to impleent")
-       
+
     
     
     def goContour(self):
@@ -128,27 +129,20 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
 
         self.Ren2.AddActor2D(self.currentContourActor);
-        #self.renderWindow.GetInteractor().Render();
         self.renderWindow.Render()
         print("contours are set");
 
 
-           
+   
+       
         
     @exportRpc("vtk.initialize.token")
     def setToken(self,token):
         self.token=token;
         print(self.token);
 
-    @exportRpc("vtk.initialize.logout")
-    def logOut(self,rtoken):
-        self.fitsReader.SetRefreshToken(rtoken);
-        print(rtoken);
-        self.fitsReader.LogOut();
-        print("logout done");
-    
-    @exportRpc("vtk.initialize")
-    def createVisualization(self,token):
+    @exportRpc("vtk.initialize.fits")
+    def createVisualizationFits(self,token):
         print("start")
         #Get renwin and renderers
         renderWindow = self.getView('-1')
@@ -178,8 +172,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         fitsReader.SetSessionToken(self.token)
         
         fitsReader.is3D=True;
-        fitsReader.GenerateVLKBUrl("40, 0,0.3,0.1");
-        # fitsReader.SetFileName("../../data/vlkb-merged_3D_2021-03-08_10-39-11_837561_16774-16805.fits");
+        #fitsReader.GenerateVLKBUrl("40, 0,0.3,0.1");
+        fitsReader.SetFileName("../../data/vlkb-merged_3D_2021-02-18_12-36-07_979531_16774-16806.fits");
         fitsReader.CalculateRMS();
             
 
@@ -375,9 +369,413 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
         return -1; #self.resetCamera()
         
+    def init2DPipe(self):
+        
+        self.setFits2D()
+        self.Set2DPipeWindowActors()
+        self.istwoDLoaded=True;
+        print("2D is set")
+        
+        
+    def setFits2D(self):
+        #fitsReader=self.fitsReader;
+        
+        #uncoment for multiuser
+        self.fitsReader2.SetTempPath(self.path)
+        self.fitsReader2.SetSessionToken(self.token)
+        
+        
+        self.fitsReader2.is3D=True;
+        #fitsReader.GenerateVLKBUrl("40, 0,0.3,0.1");
+        self.fitsReader2.SetFileName("../../data/vlkb-merged_3D_2021-02-18_12-36-07_979531_16774-16806.fits");
+        self.fitsReader2.CalculateRMS();
+            
+
+        self.max2=self.fitsReader2.GetMax();
+        self.min2=self.fitsReader2.GetMin();
+        self.rms2=self.fitsReader2.GetRMS();
+        
+        self.fitsWasRead2=True;
+        
+    def Set2DPipeWindowActors(self):         
+        #Second pipeline
+        #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/fce9cd964fa311afdf27353f0b6bc21918e5e603/Code/src/vtkwindow_new.cpp#L1178
+        renderer3=self.Ren3;
+        
+        rMin=self.fitsReader2.GetRangeSliceMin(0)
+        rMax=self.fitsReader2.GetRangeSliceMax(0)
+        #print(rMin,rMax)
+        resultScale = vtk.vtkImageShiftScale();
+        resultScale.SetOutputScalarTypeToUnsignedChar();
+        resultScale.SetInputData( self.fitsReader2.GetOutput() );
+
+        resultScale.Update();
+
+       
+       
+
+        
+        
+        lut = vtk.vtkLookupTable();
+        lut.SetTableRange(rMin,rMax) 
+        lut.SetHueRange (0., 0.);
+        lut.SetSaturationRange (0., 0.);
+        lut.SetValueRange(0., 1.);
+        #lut.SetScaleToLog10()
+        
+        lut.Build()
+        
+        #SelectLookTable("Gray",lut);
+        #imageObject->setLutScale("Log");
+        #imageObject->setLutType("Gray");
+        
+        colors =  vtk.vtkImageMapToColors();
+        colors.SetInputData(self.fitsReader2.GetOutput());
+        colors.SetLookupTable(lut);
+        colors.Update();
+        
+
+        imageSliceMapperBase = vtk.vtkImageSliceMapper();
+
+        imageSliceMapperBase.SetInputData(colors.GetOutput());
+        
+
+        imageSliceBase = vtk.vtkImageSlice();
+        
+        imageSliceBase.SetMapper(imageSliceMapperBase);
+        #print("11")
+        imageSliceBase.GetProperty().SetInterpolationTypeToNearest();
+        
+        imageSliceBase.GetProperty().SetLayerNumber(0);
+
+        #print("12")
+
+        # Stack
+        imageStack = vtk.vtkImageStack();
+        imageStack.AddImage(imageSliceBase);
+
+
+        self.legendScaleActor3d2 =  vtk.vtkVialactea.vtkLegendScaleActor2();
+        self.legendScaleActor3d2.LegendVisibilityOff();
+        self.legendScaleActor3d2.SetFitsFileName(self.fitsReader2.GetFileName());
+        print("13")
+        renderer3.AddActor(self.legendScaleActor3d2);
+        renderer3.AddViewProp(imageStack);
+        renderer3.ResetCamera();
+
+        #addLayer(imageObject);
+        
+        
+       
+        
+        self.renderWindow.Render()
+        print("Done rendein");
+        
+        
+        
+    def setRenderersToken(self,token):
+        print("start")
+        #Get renwin and renderers
+        
+        
+        renderer = vtk.vtkRenderer()
+        renderer2 = vtk.vtkRenderer()
+        renderer3 = vtk.vtkRenderer()
+        self.Ren1=renderer;
+        self.Ren2=renderer2;
+        self.Ren3=renderer3;
+        
+        self.renderWindow.AddRenderer(renderer)
+        self.renderWindow.AddRenderer(renderer2)
+         
+        renderer.SetViewport(0,0,0.5,1)
+        renderer2.SetViewport(0.5,0,1,1)
+        renderer2.SetBackground(0.21,0.23,0.25);
+        
+         #Entry point to entire vis logic:
+        #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1328
+        
+        
+        
+        #First pipeline as described in 
+        #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1386
+        
+        self.token=token;
+        print(token);
+        
+    def setFits(self):
+        #fitsReader=self.fitsReader;
+        
+        #uncoment for multiuser
+        self.fitsReader.SetTempPath(self.path)
+        self.fitsReader.SetSessionToken(self.token)
+        
+        self.fitsReader.is3D=True;
+        #fitsReader.GenerateVLKBUrl("40, 0,0.3,0.1");
+        self.fitsReader.SetFileName("../../data/vlkb-merged_3D_2021-02-18_12-36-07_979531_16774-16806.fits");
+        self.fitsReader.CalculateRMS();
+            
+
+        self.max=self.fitsReader.GetMax();
+        self.min=self.fitsReader.GetMin();
+        self.rms=self.fitsReader.GetRMS();
+        
+        self.fitsWasRead=True;
+        
+    def SetLeftWindowActors(self): 
+        
+        renderer=self.Ren1;
+        #outline
+        
+        outlineF = vtk.vtkOutlineFilter();
+        outlineF.SetInputData(self.fitsReader.GetOutput());
+        
+        
+        outlineM = vtk.vtkPolyDataMapper();
+        outlineM.SetInputConnection(outlineF.GetOutputPort());
+        outlineM.ScalarVisibilityOff();
+
+        outlineA = vtk.vtkActor();
+        outlineA.SetMapper(outlineM);
+
+	#isosurface itself Marching cubes
+        shellE = self.cone
+        shellE.SetInputData(self.fitsReader.GetOutput())
+        shellE.ComputeNormalsOff();
+        shellE.SetValue(0, 3*self.fitsReader.GetRMS())
+        shellE.Update()
+        print("cellsNum=", shellE.GetOutput().GetNumberOfCells())
+        
+        shellM = vtk.vtkPolyDataMapper()
+        shellM.ScalarVisibilityOff();
+        shellA = vtk.vtkActor()
+
+        shellM.SetInputConnection(shellE.GetOutputPort())
+        shellA.SetMapper(shellM)
+        
+        shellA.GetProperty().SetColor(1.0, 0.5, 0.5);
+
+        
+        # slice L1406
+        
+        bounds=self.fitsReader.GetOutput().GetBounds()
+        
+        self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
+       
+        self.frustumSource.ShowLinesOff();
+        self.frustumSource.SetPlanes(self.sliceE);
+        self.frustumSource.Update();
+        
+        
+        mapper2 = vtk.vtkPolyDataMapper();
+        mapper2.SetInputData(self.frustumSource.GetOutput());
+       
+        self.sliceA.SetMapper(mapper2);
+        
+        
+        renderer.AddActor(self.sliceA)
+        renderer.AddActor(shellA)
+        renderer.AddActor(outlineA)
+        
+        
+
+        
+        # axes and coords L1420
+        axes=vtk.vtkAxesActor()
+        
+        vtkAxesWidget = vtk.vtkOrientationMarkerWidget();
+        vtkAxesWidget.SetInteractor(self.renderWindow.GetInteractor());
+
+        vtkAxesWidget.SetOrientationMarker(axes);
+
+        vtkAxesWidget.SetOutlineColor( 0.9300, 0.5700, 0.1300 );
+        vtkAxesWidget.SetViewport( 0.0, 0.0, 0.2, 0.2 );
+        vtkAxesWidget.SetEnabled(1);
+        vtkAxesWidget.InteractiveOff();
+        
+                
+        #TODO import custom legend
+        self.legendScaleActor3d =  vtk.vtkVialactea.vtkLegendScaleActor2();
+        self.legendScaleActor3d.LegendVisibilityOff();
+        self.legendScaleActor3d.SetFitsFileName(self.fitsReader.GetFileName());
+       
+        
+        renderer.AddActor(self.legendScaleActor3d);
+        print("legend scale fits was set")
+       
+        
+        #add label
+        tprop = vtk.vtkTextProperty()
+        tprop.SetFontFamilyToArial()
+        tprop.SetFontSize(10)
+        tprop.BoldOff()
+        tprop.ShadowOff()
+        tprop.SetColor(1, 1, 1)
+        #self.textActor.SetDisplayPosition(205, 205)
+        #self.textActor.SetTextProperty(tprop);
+        self.textActor.SetInput(self.fitsReader.GetDataCubeData())
+        renderer.AddActor(self.textActor);
+        print("Text actor was set")
+        
+        
+    def SetRightWindowActors(self):         
+        #Second pipeline
+        renderer2=self.Ren2;
+        
+        rMin=self.fitsReader.GetRangeSliceMin(0)
+        rMax=self.fitsReader.GetRangeSliceMax(0)
+        #print(rMin,rMax)
+        lut = vtk.vtkLookupTable();
+        lut.SetTableRange(rMin,rMax) 
+        lut.SetHueRange (0., 0.);
+        lut.SetSaturationRange (0., 0.);
+        lut.SetValueRange(0., 1.);
+        
+        lut.Build()
+        
+        #setVtkInteractorStyleImageContour(); L1473 - the setting of  vtk.vtkInteractorStyleImage()
+        #As described in https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L3173
+        #Left Mouse button triggers window level events
+        #CTRL Left Mouse spins the camera around its view plane normal
+        #SHIFT Left Mouse pans the camera
+        #CTRL SHIFT Left Mouse dollys (a positional zoom) the camera
+        #Middle mouse button pans the camera
+        #Right mouse button dollys the camera.
+        #SHIFT Right Mouse triggers pick events
+    
+        print("lutBuild") 
+        self.viewer.SetRenderer(renderer2);
+        self.viewer.SetRenderWindow(self.renderWindow);
+        self.viewer.SetupInteractor(self.renderWindow.GetInteractor());
+        self.viewer.SetInputData(self.fitsReader.GetOutput());
+        self.viewer.GetWindowLevel().SetOutputFormatToRGB();
+        self.viewer.GetWindowLevel().SetLookupTable(lut);
+        self.viewer.GetImageActor().InterpolateOff();
+        
+        
+        
+        self.viewer.SetSlice(1)
+        self.viewer.SetSlice(0)
+        
+        self.viewer.GetRenderer().ResetCamera()
+        
+        print("Interactor type2") 
+        name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
+        print(name)
+        
+        #istyle = vtk.vtkInteractorStyleTrackballCamera()
+        #self.renderWindow.GetInteractor().SetInteractorStyle(istyle)
+        #print("Interactor replaced with") 
+        #name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
+        #print(name)
+         
+         #NOTE: no need to allocate another one and read fits again
+        #legendScaleActorImage =  vtk.vtkVialactea.vtkLegendScaleActor2();
+        #legendScaleActorImage.LegendVisibilityOff();
+        #legendScaleActor3d.SetFitsFileName(fitsReader.GetFileName());
+        #legendScaleActorImage.setFitsFile(myfits);
+        renderer2.AddActor(self.legendScaleActor3d);
+        
+        #updateScene();
+        
+        self.renderWindow.Render()
+       
+         
+       
+        camera = self.Ren1.GetActiveCamera()
+        camera.SetViewUp( 0, 1, 0 )
+        
+        if self.useContours:
+           self.goContour();
+
+        
+        
+       
+        
+    def createScene3D(self):
+        #self.setFits();
+        
+        
+        self.SetLeftWindowActors();
+        self.SetRightWindowActors();
+        print("Done") 
+      
+        self.Ren1.ResetCamera()
+        self.Ren2.ResetCamera()
+        
+        #Set coordinates for reset camera 
+        # all actors where added to renderer for first pipeline above
+        self.cam_init_pos=self.Ren1.GetActiveCamera( ).GetPosition();
+        self.cam_init_foc=self.Ren1.GetActiveCamera( ).GetFocalPoint();
+        
+       
+        print(self.cam_init_pos)
+        
+        #getInteractorStyle info to check
+       
+        print("Interactor type final check") 
+        name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
+        print(name)
+        
+     
+        
+        
+        self.renderWindow.Render()
+        
+        
+        self.resetCamera();  
+        #currently is setted this one
+        self.fitsWasRead=True;
+        self.istreeDLoaded=True;
+        
+            
+        
+    @exportRpc("vtk.initialize")
+    def createVisualization(self,token):
+        renderWindow = self.getView('-1')
+        self.renderWindow=renderWindow;
+        # Set Renderers and Token
+        self.setRenderersToken(token);
+        #self.setFits();
+        
+        if self.fitsWasRead:
+          self.SetLeftWindowActors();
+          self.SetRightWindowActors();
+        
+      
+          self.Ren1.ResetCamera()
+          self.Ren2.ResetCamera()
+        
+          #Set coordinates for reset camera 
+          # all actors where added to renderer for first pipeline above
+          self.cam_init_pos=self.Ren1.GetActiveCamera( ).GetPosition();
+          self.cam_init_foc=self.Ren1.GetActiveCamera( ).GetFocalPoint();
+        
+       
+        
+        
+        
+        
+       
+          print(self.cam_init_pos)
+        
+        
+     
+        
+        
+          self.renderWindow.Render()
+        
+        
+          self.resetCamera();  
+          #currently is setted this one
+          self.istreeDLoaded=True;
+
+        return -1; #self.resetCamera()
+        
 
     def ResetCam():
         renderWindow = self.getView('-1')
+        
         rends=renderWindow.GetRenderers()
         
         renderer = rends.GetItemAsObject(0)
@@ -388,11 +786,35 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
     @exportRpc("vtk.cone.fits.update")
     def updateFits(self,url):
+        #if self.fitsWasRead==False: #not loaded as far
+        #   #uncoment for multiuser
+        #   self.fitsReader.SetTempPath(self.path)
+        #   self.fitsReader.SetSessionToken(self.token)
+        
+        #   self.fitsReader.is3D=True;
+           
+           
+
+        print ("check scene")
+        
+        print ("ResetCam")
         print("stat updating");
         result=self.fitsReader.DownloadSurveyDataCube(url);
         if result:
            print("stat updating2");
            self.fitsReader.CalculateRMS();
+           
+           self.max=self.fitsReader.GetMax();
+           self.min=self.fitsReader.GetMin();
+           self.rms=self.fitsReader.GetRMS();
+           
+           #update scene
+           #if self.fitsWasRead==False:
+           #   self.createScene3D();
+           
+           
+        
+           
         
            fits=self.fitsReader.GetOutput();
            bounds=fits.GetBounds()
@@ -411,6 +833,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
     @exportRpc("vtk.camera.reset")
     def resetCamera(self):
         renderWindow = self.getView('-1')
+       
+        
         renderWindow.GetRenderers().GetFirstRenderer().ResetCamera()
         renderWindow.Render()
         
@@ -453,6 +877,17 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         # str_p=str(p1)+","+str(p2);
         # str_r=str(r1)+","+str(r2);
         print(res);
+        
+        if self.fitsWasRead==False: #not loaded as far
+           #uncoment for multiuser
+           self.fitsReader.SetTempPath(self.path)
+           #self.fitsReader.SetSessionToken(self.token)
+        
+           #self.fitsReader.is3D=True;
+           
+           
+           
+           
         self.fitsReader.SetSessionToken(self.token)
 
         self.fitsReader.is3D=True;
@@ -460,6 +895,13 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
         self.fitsReader.GenerateVLKBUrl(res);
         result= self.fitsReader.CalculateRMS();
+        
+        self.max=fitsReader.GetMax();
+        self.min=fitsReader.GetMin();
+        self.rms=fitsReader.GetRMS();
+        
+        if self.fitsWasRead==False:
+           self.createScene3D();
         res_str=self.fitsReader.GetSurveysData();
         self.textActor.SetInput(self.fitsReader.GetDataCubeData())
         self.textActor.Modified();
@@ -728,6 +1170,9 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
            
     @exportRpc("vtk.cone.camview.update")
     def updateCamView(self, v):
+    
+       
+        
         camera = self.renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera();
         renderer=self.renderWindow.GetRenderers().GetFirstRenderer()
         renderer.ResetCamera()
@@ -763,7 +1208,62 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.rotateX=v;
         print(self.rotateX)
         
+    @exportRpc("vtk.cone.dim.update")
+    def updateDim(self, v):
+        prev=self.istwoD;
+        if self.istwoD!=v:
+           self.istwoD=v;
+           if self.istwoD==0:
+               
+               self.renderWindow.RemoveRenderer (self.Ren1)
+               self.renderWindow.RemoveRenderer (self.Ren2)
+               if self.istwoDLoaded==False:
+                  #initialize 2D pipeline
+                  self.init2DPipe()
+                  
+               if prev!=2:
+                   self.renderWindow.AddRenderer(self.Ren3)
+               self.Ren3.SetViewport(0.0,0,1,1)
+               self.Ren3.SetBackground(0.81,0.13,0.15);
+               print("2d");
+           else:
+            if self.istwoD==1:
+              self.renderWindow.RemoveRenderer (self.Ren3)
+              if prev==2:
+                   self.renderWindow.RemoveRenderer (self.Ren1)
+                   self.renderWindow.RemoveRenderer (self.Ren2)
+                   
+              self.renderWindow.AddRenderer(self.Ren1)
+              self.renderWindow.AddRenderer(self.Ren2)
+         
+              self.Ren1.SetViewport(0,0,0.5,1)
+              self.Ren2.SetViewport(0.5,0,1,1)
+              print("3d");
+            else:
+              if prev==1:
+                   self.renderWindow.RemoveRenderer (self.Ren1)
+                   self.renderWindow.RemoveRenderer (self.Ren2)
+              else: 
+                   self.renderWindow.RemoveRenderer (self.Ren3)
+                   
+              
+              
+              self.renderWindow.AddRenderer(self.Ren1)
+              self.renderWindow.AddRenderer(self.Ren2)
+              self.renderWindow.AddRenderer(self.Ren3)
+              self.Ren3.SetBackground(0.81,0.13,0.15);
+              self.Ren1.SetViewport(0,0,0.35,1)
+              self.Ren2.SetViewport(0.35,0,0.7,1)
+              self.Ren3.SetViewport(0.7,0,1,1)
+               
+              print("Mixed");
+        self.renderWindow.Render()
+        
+        
+        self.resetCamera();  
 
+        print("Done");
+        
 
     @exportRpc("viewport.gesture")
     def updateGesture(self, event):

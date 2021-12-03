@@ -20,6 +20,7 @@ export default {
   data() {
     return {
       dialog: false,
+      
       /*toggle_one: 1,*/
       logo,
       ex1: { label: 'Threshold', val: 3.0, color: 'orange darken-3' },
@@ -69,6 +70,7 @@ export default {
       params: 'WS_PARAMS',
       toggle_cam: 'CONE_CAMERA',
       rotateX: 'CONE_ROTATE',
+      is2D: 'CONE_2D',
     }),
   },
   methods: {
@@ -89,6 +91,7 @@ export default {
       setDb: 'CONE_SETDB',
       setCameraView: 'CONE_SETCAMERAVIEW',
       setRotate: 'CONE_SETROTATE',
+      set2D:'CONE_SET2D',
 
       
      
@@ -97,6 +100,11 @@ export default {
       //this.dialog=true;
       //alert(this.toggle_one);
     },
+    gotoOther() {
+      let route = this.$router.resolve({ path: "/vlw2" });
+      window.open(route.href,"_blank");
+    },
+    
     //GetInitial data
     getData() {
       //

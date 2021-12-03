@@ -3,11 +3,21 @@
   position: relative;
 }
 
+#nav {
+  padding: -2px;
+}
+
+
 .appContent {
   /* need a fixed height of arbitrary value
    * so the vtk viewers don't grow too much in
    * height when resizing. */
   height: 0;
+}
+
+.switch-center {
+  display: flex;
+  justify-content: center;
 }
 
 /*Reversed input variant*/
@@ -50,9 +60,8 @@
 .switch {
   max-width: 100px;
   width: auto;
-  flex: 0;
-  padding-left: 20px;
-  padding-top: 20px !important;
+ 
+  
 }
 
 .v-btn-toggle > .v-btn.v-size--default {

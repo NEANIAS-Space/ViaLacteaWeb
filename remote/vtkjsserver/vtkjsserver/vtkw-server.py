@@ -97,11 +97,11 @@ class _Server(vtk_wslink.ServerProtocol):
             #renderer2.SetBackground(1.0,1.0,1.0)
             #renderer.SetBackground(0.0,0.0,0.0)
             renderWindow = vtk.vtkRenderWindow()
-            renderWindow.AddRenderer(renderer)
-            renderWindow.AddRenderer(renderer2)
+            #renderWindow.AddRenderer(renderer)
+            #renderWindow.AddRenderer(renderer2)
             
-            renderer.SetViewport(0,0,0.5,1)
-            renderer2.SetViewport(0.5,0,1,1)
+            #renderer.SetViewport(0,0,0.5,1)
+            #renderer2.SetViewport(0.5,0,1,1)
 
             renderWindowInteractor = vtk.vtkRenderWindowInteractor()
             renderWindowInteractor.SetRenderWindow(renderWindow)
