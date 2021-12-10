@@ -10,6 +10,7 @@ export default {
     db:0.0,
     toggle_cam:1,
     rotateX:true,
+    is2D:1,
     contours:false
   },
   getters: {
@@ -103,6 +104,13 @@ export default {
      const t = Boolean(rotateX);
       state.rotateX=!rotateX;
       return dispatch('WS_UPDATE_ROTATE', t);
+      // alert(rotateX);
+      
+    },
+    async CONE_SET2D({ state, dispatch },is2D) {
+     const t = Number(is2D);
+      state.is2D=!is2D;
+      return dispatch('WS_UPDATE_2D', t);
       // alert(rotateX);
       
     },

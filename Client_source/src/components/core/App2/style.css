@@ -1,0 +1,93 @@
+/* set vuetify-specific wrapper to contain our overlay */
+:global(.content--wrap) {
+  position: relative;
+}
+
+.appContent {
+  /* need a fixed height of arbitrary value
+   * so the vtk viewers don't grow too much in
+   * height when resizing. */
+  height: 0;
+}
+
+.switch-center {
+  display: flex;
+  justify-content: center;
+}
+
+/*Reversed input variant*/
+.v-input--reverse .v-input__slot {
+  flex-direction: row-reverse;
+  justify-content: flex-end;
+  .v-application--is-ltr & {
+    .v-input--selection-controls__input {
+      margin-right: 0;
+      margin-left: 8px;
+    }
+  }
+  .v-application--is-rtl & {
+    .v-input--selection-controls__input {
+      margin-left: 0;
+      margin-right: 8px;
+    }
+  }
+}
+
+/* "expand" variant*/
+.v-input--expand .v-input__slot {
+ 
+  .v-label {
+    display: block;
+    flex: 1;
+  }
+}
+
+
+.logo {
+  height: 35px;
+  padding-right: 10px;
+}
+
+.slider {
+  max-width: 300px;
+}
+
+.switch {
+  max-width: 100px;
+  width: auto;
+ 
+  
+}
+
+.v-btn-toggle > .v-btn.v-size--default {
+    height: 38px;
+    min-height: 0;
+    min-width: 38px;
+    padding: 0 12px;
+}
+
+button {
+  padding: 5px 10px;
+  border: 1px solid #ddd;
+  color: #333;
+  background-color:#fff;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: arail;
+  cursor: pointer;
+  &[disabled]{
+    cursor: not-allowed;
+  }
+  &.danger {
+    background-color: #ff4949;
+    color: #fff;
+  }
+  &.success {
+    background-color: #13ce66;
+    color: #fff;
+  }
+  &.info {
+    background-color: #50bfff;
+    color: #fff;
+  }
+}

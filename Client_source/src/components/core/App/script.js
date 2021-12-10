@@ -20,6 +20,9 @@ export default {
   data() {
     return {
       dialog: false,
+      mes:"Loading",
+      overlay: true,
+      
       /*toggle_one: 1,*/
       logo,
       ex1: { label: 'Threshold', val: 3.0, color: 'orange darken-3' },
@@ -31,6 +34,7 @@ export default {
       myImage: require('@/assets/OPEN_LOCAL.png'),
 
       right: null,
+      rtoken:'',
       
 
       //GetInitial data
@@ -68,6 +72,7 @@ export default {
       params: 'WS_PARAMS',
       toggle_cam: 'CONE_CAMERA',
       rotateX: 'CONE_ROTATE',
+      is2D: 'CONE_2D',
     }),
   },
   methods: {
@@ -79,6 +84,7 @@ export default {
       connect: 'WS_CONNECT',
       loadData: 'CONE_XMLFITS_UPDATE',
       loadDataShort: 'WS_FITS_UPDATE',
+      keyLogOut: 'WS_LOGOUT',
       updateToken: 'WS_UPDATE_TOKEN',
       setP1: 'CONE_SETP1',
       setP2: 'CONE_SETP2',
@@ -87,6 +93,7 @@ export default {
       setDb: 'CONE_SETDB',
       setCameraView: 'CONE_SETCAMERAVIEW',
       setRotate: 'CONE_SETROTATE',
+      set2D:'CONE_SET2D',
 
       
      
@@ -95,10 +102,17 @@ export default {
       //this.dialog=true;
       //alert(this.toggle_one);
     },
+    //TODO: future 3D/2D
+    gotoOther() {
+      let route = this.$router.resolve({ path: "/vlw2" });
+      window.open(route.href,"_blank");
+    },
+    
     //GetInitial data
     getData() {
       //
       this.mini = !this.mini;
+      this.overlay=false
       this.loadData();
 
       //.Cone.loadXMLFITS(res)
@@ -117,6 +131,19 @@ export default {
       console.log(s);
       this.updateToken(token);
       this.$oidc.resetUpdate(); //set back to false
+    },
+    onLogOut()
+    {
+      //getTokenId
+
+
+      //alert(token);
+      //var s=this.$oidc.authName;
+      //console.log("Log out start")
+      //alert(this.rtoken);
+      this.keyLogOut(this.rtoken);
+      this.$oidc.resetUpdate(); //set back to false
+      this.$oidc.signOut();
     },
     checkToken()
        {
@@ -162,10 +189,13 @@ export default {
   //  else{
       //this.onLoadToken();
       var token=this.$oidc.accessToken;
+      this.rtoken=this.$oidc.refreshToken;
+
       //this.callFunction();
       //this.updateToken(token);
       
       this.connect(token);
+      //this.mes="2D window";
       setInterval(this.checkToken,1000);
       //setInterval(this.onLoadToken,1500);
       //setInterval(this.onLoadToken, 900000);

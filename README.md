@@ -6,7 +6,7 @@ As a part of this research, the ViaLactea Web (VLW) solution is developed as a c
 
 The NEANIAS ViaLactea Web is available at
 
-[https://visivo-server.oact.inaf.it](https://visivo-server.oact.inaf.it/).
+[https://visivo-server.oact.inaf.it](https://visivo-server.oact.inaf.it/) and on [https://vlw.neanias.eu](vlw.neanias.eu/)
 
 The main requirements are:
 

@@ -1,15 +1,6 @@
 <template>
   <div id="app">
-    <div id="nav">
-    
-     
-      
-      <a href="#" @click="$oidc.signOut()" v-if="$oidc.isAuthenticated"
-        >Signout</a>
-      <a href="#" @click="$oidc.signIn()" v-if="!$oidc.isAuthenticated"
-        >SignIn</a
-      >
-    </div>
+   
     <router-view />
     
  </div>
@@ -29,16 +20,16 @@
   color: #2c3e50;
 }
 
-#nav {
-  padding: 30px;
+#nav2 {
+  padding: 0px;
 }
 
-#nav a {
+#nav2 a {
   font-weight: bold;
   color: #2c3e50;
 }
 
-#nav a.router-link-exact-active {
+#nav2 a.router-link-exact-active {
   color: #42b983;
 }
 </style>

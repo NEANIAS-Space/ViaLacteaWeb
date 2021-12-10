@@ -1,15 +1,21 @@
 
-<v-app>
+<v-app >
 
 
 
 
-  <v-app-bar app shrink-on-scroll height="60">
-<a href="/" @click="$oidc.signOut()" v-if="$oidc.isAuthenticated"
-       >Signout</a>
+  <v-app-bar app shrink-on-scroll height="60" align="center"
+      justify="center" v-on:click="overlay=false">
+<v-layout row wrap align-center justify-center>
+<v-btn
+           color="primary"
+           text
+           @click="onLogOut"
+         >
+           LogOut
+         </v-btn>
 <v-spacer />
 
- <v-switch class="d-md-none" v-model="rotateX" v-on:change="setRotate" label="Rotate axis" />
 
 <v-btn v-model="toggle_cam"
            color="primary"
@@ -19,12 +25,12 @@
            Reset Camera
          </v-btn>
 
-   
-   
 
 
-<v-container style="width: 35%">
-<div class="d-none d-md-block" style="margin: 10px; padding: 0px;">
+
+
+<v-container style="width: 22%">
+<div class="d-none d-md-block" style="margin: 5px; padding: 0px;">
   <v-slider
  :label="ex1.label"
  thumb-label="always"
@@ -36,10 +42,10 @@
  @input="setResolution"
 />
  </div>
- 
+
  <div class="d-md-none">
 
-         <v-text-field style="margin: 0px; padding: 0px; width: 80px"
+         <v-text-field style="margin: 0px; padding: 0px; width: 60px"
                  label="Threshold"
                  type="number"
                  :value="resolution"
@@ -48,16 +54,16 @@
                  :step="0.1"
                  @input="setResolution"
                />
-             
-      
 
-    </div> 
+
+
+    </div>
  </v-container>
 
 
 
-<v-container style="width: 35%">
-   <div class="d-none d-md-block" style="margin: 10px; padding: 0px;">
+<v-container style="width: 22%">
+   <div class="d-none d-md-block" style="margin: 5px; padding: 0px;">
      <v-slider
    :label="ex2.label"
    thumb-label="always"
@@ -68,15 +74,15 @@
    :step="1"
    @input="setPlanes"
   >
-   
-    
+
+
     </v-slider>
    </div>
 
 <div class="d-md-none">
 
-        
-        <v-text-field style="margin: 0px; padding: 0px; width: 80px" class="' text-caption text-sm-body-2 text-md-body-1 text-lg-h6'"
+
+        <v-text-field style="margin: 0px; padding: 0px; width: 60px" class="' text-caption text-sm-body-2 text-md-body-1 text-lg-h6'"
                 label="Cut planes"
                 type="number"
                 :value="planes"
@@ -85,15 +91,15 @@
                 :step="1"
                 @input="setPlanes"
               />
-            
-     
+
+
 
    </div>
-       
+
 </v-container>
 
 <v-switch class="v-input--reverse" v-model="contours" v-on:change="setContours" label="Use contours" >
-               
+
        </v-switch>
 
 
@@ -106,13 +112,13 @@
     >
       <template v-slot:activator="{ on, attrs }">
         <v-btn
-         
-         
+
+
           v-bind="attrs"
           v-on="on"
         >
           <v-icon
-           
+
           >
             mdi-settings
           </v-icon>
@@ -125,14 +131,14 @@
         </v-card-title>
 
         <v-card-text>
-           
-        </v>
+
+
         <v-switch
          label="Theme"
           @click="$vuetify.theme.dark = !$vuetify.theme.dark"
         />
-        
-        
+
+
        </v-card-text>
 
         <v-divider></v-divider>
@@ -158,12 +164,16 @@
 
 
 
-<v-progress-linear :active="busy" :indeterminate="busy" absolute bottom />
-
-
-  
+<v-progress-linear :active="busy" :indeterminate="busy" absolute bottom height="10" striped>
+  <div style="color:White; font-size: 8px;">
+{{ mes }}
+  </div>
+</v-progress-linear>
+ 
+  </v-layout>
   </v-app-bar>
-<v-navigation-drawer
+
+<v-navigation-drawer v-on:click="overlay=false"
 v-model="drawer"
 :mini-variant.sync="mini"
     :hide-overlay="true"
@@ -175,10 +185,10 @@ v-model="drawer"
         <v-container fluid align="center" >
             <v-list>
            <v-list-item >
-             
+
            <v-list-item-title>VLKB</v-list-item-title>
            <v-btn style="margin: 5px; padding: 12px;"
-                                   
+
                                    icon
                                    @click.stop="mini = !mini"
                                  >
@@ -191,10 +201,10 @@ v-model="drawer"
                        mdi-database-search
                      </v-icon>
                    </v-list-item-icon>
-            
+
                    <v-list-item-content>
                      <v-list-item-title>Coordinates</v-list-item-title>
-                    
+
                          <v-text-field
                            label="glon"
                            :value="p1"
@@ -203,7 +213,7 @@ v-model="drawer"
                             min='0'
                             @input="setP1"
                      ></v-text-field>
-                     
+
                          <v-text-field
                            label="glat"
                            :value="p2"
@@ -211,12 +221,12 @@ v-model="drawer"
                            max='90'
                            min='-90'
                            @input="setP2"
-                     
+
                          ></v-text-field>
                      <v-row align="right" >
-                                         
-                              
-                     
+
+
+
                        <v-col>
                          <v-text-field
                            label="radius"
@@ -225,7 +235,7 @@ v-model="drawer"
                            max='4'
                            min='0'
                            @input="setR1"
-                     
+
                          ></v-text-field>
                        </v-col>
                        <v-col >
@@ -236,10 +246,10 @@ v-model="drawer"
                            max='4'
                            min='0'
                            @input="setDl"
-                         
+
                          ></v-text-field>
                        </v-col>
-                      
+
                       <v-col >
                            <v-text-field
                              label="db"
@@ -248,26 +258,26 @@ v-model="drawer"
                              max='4'
                              min='0'
                              @input="setDb"
-                           
+
                            ></v-text-field>
                          </v-col>
-                     
+
                      </v-row>
                      <button v-on:click="getData">Query</button>
-                            
+
                    </v-list-item-content>
                  </v-list-item>
-                 
+
                  <v-list-item>
                                    <v-list-item-icon>
                                      <v-icon >
                                        mdi-magnify
                                      </v-icon>
                                    </v-list-item-icon>
-                            
+
                                    <v-list-item-content>
-                                  
-                                
+
+
                                              <v-text-field
                                               label="Search"
                                                single-line
@@ -279,47 +289,63 @@ v-model="drawer"
                                              :headers="headers"
                                              :items="JSON.parse(out_json)"
                                              :search="search"
-                                              
+
                                               @click:row="onButtonClick"
                                            >
                                              <template slot="items" slot-scope="props">
                                                <td class="text-xs-right">{{ props.item.survey }}</td>
                                                <td class="text-xs-right" ><a :href="props.item.url"> {{ props.item.overlap }}</a></td>
-                                                
-                                                
-                                              
+
+
+
                                              </template>
                                              <v-alert slot="no-results" :value="true" color="error" icon="warning">
                                                Your search for "{{ search }}" found no results.
                                              </v-alert>
                                            </v-data-table>
-                                    
-                                  
-                               
+
+
+
                                    </v-list-item-content>
                                   </v-list-item>
                </v-list>
-          
-           
-           
-                 
-                 
-                
-               
+
+
+
+
+
+
+
            <v-row align="left"
                justify="center">
                <v-col>
-       
+
            </v-col>
            </v-row>
-           </v-layout>
+
            </v-container>
      </v-navigation-drawer>
 
 
   <v-main :class="$style.appContent">
-   
-    <div style="position: relative; width: 100%; height: 100%">
+
+    <div style="position: relative; width: 100%; height: 100%" v-on:click="overlay=false">
+     <v-overlay :absolute="absolute" :opacity="opacity" :value="overlay"  >
+        Please, input Galactic Coordinates on the left panel
+        <v-icon >
+          mdi-database-search
+        </v-icon>
+
+     </v-overlay>
+      <v-overlay :absolute="absolute" :opacity="opacity" :value="busy"  >
+         <v-container >
+                 <v-layout row justify-center align-center>
+                   <v-progress-circular :active="busy" :indeterminate="busy":size="70" :width="7" color="blue">
+                     {{ mes }}
+                   </v-progress-circular>
+                 </v-layout>
+               </v-container>
+      </v-overlay>
       <remote-rendering-view :client="client" />
     </div>
   </v-main>

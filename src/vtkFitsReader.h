@@ -31,7 +31,11 @@ public:
     {
         m_token = token;
     }
+    /* For log out*/
+    bool LogOut();
+    void SetRefreshToken(std::string t){m_refreshToken=t;};
 
+ 
     bool GenerateVLKBUrl(std::string data);
     bool DownloadSurveyDataCube(std::string urlString);
 
@@ -185,6 +189,7 @@ private:
     //    char cunit3[1][200];
 
     std::string m_token;
+    std::string m_refreshToken;
     void ReadHeader();
     void printerror(int status); // from fitsio distribution
     double initSlice;

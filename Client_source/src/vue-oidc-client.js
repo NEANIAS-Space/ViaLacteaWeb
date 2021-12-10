@@ -117,6 +117,9 @@ export function createOidcAuth(authName, defaultSignInType, appUrl, oidcConfig, 
             accessToken() {
                 return !!this.user && !this.user.expired ? this.user.access_token : '';
             },
+            refreshToken() {
+                return !!this.user ? this.user.refresh_token : '';
+            },
             needsUpdate() {
                 return this.needs_update;
             },

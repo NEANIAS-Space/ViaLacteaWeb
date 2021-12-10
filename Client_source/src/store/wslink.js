@@ -127,6 +127,11 @@ export default {
         state.client.getRemote().VLWBase.loadURL().catch(console.error);
       }
     },
+    WS_LOGOUT({ state },rtoken) {
+     if (state.client) {
+      state.client.getRemote().VLWBase.logOut(rtoken).catch(console.error);
+    }
+    },
     WS_UPDATE_RESOLUTION({ state }, resolution) {
       if (state.client) {
         // var t0 = performance.now();
@@ -183,6 +188,18 @@ export default {
         state.client
           .getRemote()
           .VLWBase.updateRotateAxis(v)
+          .catch(console.error);
+      }
+    },
+    
+    WS_UPDATE_2D({ state }, v) {
+      if (state.client) {
+        // var t0 = performance.now();
+    
+        //clientToConnect.beginBusy();
+        state.client
+          .getRemote()
+          .VLWBase.updateDim(v)
           .catch(console.error);
       }
     },

@@ -1,0 +1,337 @@
+
+<v-app>
+
+
+
+
+  <v-app-bar app shrink-on-scroll height="60" align="center"
+      justify="center">
+<v-layout row wrap align-center justify-center>
+<v-btn
+           color="primary"
+           text
+           @click="onLogOut"
+         >
+           LogOut
+         </v-btn>
+<v-spacer />
+
+
+<div>{{mes}}</div>
+
+  
+</a>
+<v-btn v-model="toggle_cam"
+           color="primary"
+           text
+           @click="setCameraView"
+         >
+           Reset Camera
+         </v-btn>
+
+
+
+
+
+<v-container style="width: 22%">
+<div class="d-none d-md-block" style="margin: 5px; padding: 0px;">
+  <v-slider
+ :label="ex1.label"
+ thumb-label="always"
+ hide-details
+ :value="resolution"
+ :max="params[1]"
+ :min="params[0]"
+ :step="0.1"
+ @input="setResolution"
+/>
+ </div>
+
+ <div class="d-md-none">
+
+         <v-text-field style="margin: 0px; padding: 0px; width: 60px"
+                 label="Threshold"
+                 type="number"
+                 :value="resolution"
+                 :max="params[0]"
+                 :min="params[1]"
+                 :step="0.1"
+                 @input="setResolution"
+               />
+
+
+
+    </div>
+ </v-container>
+
+
+
+<v-container style="width: 22%">
+   <div class="d-none d-md-block" style="margin: 5px; padding: 0px;">
+     <v-slider
+   :label="ex2.label"
+   thumb-label="always"
+   hide-details
+   :value="planes"
+   :max="params[3]"
+   :min="params[2]"
+   :step="1"
+   @input="setPlanes"
+  >
+
+
+    </v-slider>
+   </div>
+
+<div class="d-md-none">
+
+
+        <v-text-field style="margin: 0px; padding: 0px; width: 60px" class="' text-caption text-sm-body-2 text-md-body-1 text-lg-h6'"
+                label="Cut planes"
+                type="number"
+                :value="planes"
+                :max="params[3]"
+                :min="params[2]"
+                :step="1"
+                @input="setPlanes"
+              />
+
+
+
+   </div>
+
+</v-container>
+
+<v-switch class="v-input--reverse" v-model="contours" v-on:change="setContours" label="Use contours" >
+
+       </v-switch>
+
+
+<!--Settings-->
+
+  <div class="text-center">
+    <v-dialog
+      v-model="dialog"
+      width="500"
+    >
+      <template v-slot:activator="{ on, attrs }">
+        <v-btn
+
+
+          v-bind="attrs"
+          v-on="on"
+        >
+          <v-icon
+
+          >
+            mdi-settings
+          </v-icon>
+        </v-btn>
+      </template>
+
+      <v-card>
+        <v-card-title class="text-h5 grey lighten-2">
+          Settings
+        </v-card-title>
+
+        <v-card-text>
+
+
+        <v-switch
+         label="Theme"
+          @click="$vuetify.theme.dark = !$vuetify.theme.dark"
+        />
+
+
+       </v-card-text>
+
+        <v-divider></v-divider>
+
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn
+            color="primary"
+            text
+            @click="dialog = false"
+          >
+            Close
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
+
+
+
+
+
+
+
+
+<v-progress-circular :active="busy" :indeterminate="busy" absolute bottom />
+
+
+  </v-layout>
+  </v-app-bar>
+
+<v-navigation-drawer
+v-model="drawer"
+:mini-variant.sync="mini"
+    :hide-overlay="true"
+    :disable-resize-watcher="false"
+    mini-variant-width="45"
+    permanent
+           app :width="350">
+           <v-divider></v-divider>
+        <v-container fluid align="center" >
+            <v-list>
+           <v-list-item >
+
+           <v-list-item-title>VLKB</v-list-item-title>
+           <v-btn style="margin: 5px; padding: 12px;"
+
+                                   icon
+                                   @click.stop="mini = !mini"
+                                 >
+                                   <v-icon>mdi-chevron-left</v-icon>
+                                 </v-btn>
+           </v-list-item>
+           <v-list-item>
+                   <v-list-item-icon>
+                     <v-icon >
+                       mdi-database-search
+                     </v-icon>
+                   </v-list-item-icon>
+
+                   <v-list-item-content>
+                     <v-list-item-title>Coordinates</v-list-item-title>
+
+                         <v-text-field
+                           label="glon"
+                           :value="p1"
+                            type="number"
+                            max='360'
+                            min='0'
+                            @input="setP1"
+                     ></v-text-field>
+
+                         <v-text-field
+                           label="glat"
+                           :value="p2"
+                           type="number"
+                           max='90'
+                           min='-90'
+                           @input="setP2"
+
+                         ></v-text-field>
+                     <v-row align="right" >
+
+
+
+                       <v-col>
+                         <v-text-field
+                           label="radius"
+                           :value="r1"
+                           type="number"
+                           max='4'
+                           min='0'
+                           @input="setR1"
+
+                         ></v-text-field>
+                       </v-col>
+                       <v-col >
+                         <v-text-field
+                           label="dl"
+                           :value="dl"
+                           type="number"
+                           max='4'
+                           min='0'
+                           @input="setDl"
+
+                         ></v-text-field>
+                       </v-col>
+
+                      <v-col >
+                           <v-text-field
+                             label="db"
+                             :value="db"
+                             type="number"
+                             max='4'
+                             min='0'
+                             @input="setDb"
+
+                           ></v-text-field>
+                         </v-col>
+
+                     </v-row>
+                     <button v-on:click="getData">Query</button>
+
+                   </v-list-item-content>
+                 </v-list-item>
+
+                 <v-list-item>
+                                   <v-list-item-icon>
+                                     <v-icon >
+                                       mdi-magnify
+                                     </v-icon>
+                                   </v-list-item-icon>
+
+                                   <v-list-item-content>
+
+
+                                             <v-text-field
+                                              label="Search"
+                                               single-line
+                                               hide-details
+                                               v-model="search"
+                                             ></v-text-field>
+                                           </v-card-title>
+                                           <v-data-table
+                                             :headers="headers"
+                                             :items="JSON.parse(out_json)"
+                                             :search="search"
+
+                                              @click:row="onButtonClick"
+                                           >
+                                             <template slot="items" slot-scope="props">
+                                               <td class="text-xs-right">{{ props.item.survey }}</td>
+                                               <td class="text-xs-right" ><a :href="props.item.url"> {{ props.item.overlap }}</a></td>
+
+
+
+                                             </template>
+                                             <v-alert slot="no-results" :value="true" color="error" icon="warning">
+                                               Your search for "{{ search }}" found no results.
+                                             </v-alert>
+                                           </v-data-table>
+
+
+
+                                   </v-list-item-content>
+                                  </v-list-item>
+               </v-list>
+
+
+
+
+
+
+
+           <v-row align="left"
+               justify="center">
+               <v-col>
+
+           </v-col>
+           </v-row>
+
+           </v-container>
+     </v-navigation-drawer>
+
+
+  <v-main :class="$style.appContent">
+
+    <div style="position: relative; width: 100%; height: 100%">
+      <remote-rendering-view :client="client" />
+    </div>
+  </v-main>
+</v-app>
