@@ -7,6 +7,26 @@
   padding: -2px;
 }
 
+#one
+{
+    background-color: #EEE;
+    margin: 62px 258px;
+    padding: 5px;
+    width: 200px;
+    position: relative;   
+}
+
+#two
+{
+    background-color: #F00;
+    display: inline-block;
+    height: 30px;
+    position: absolute;
+    width: 100px;
+    top:10px;
+}​
+
+
 
 .appContent {
   /* need a fixed height of arbitrary value

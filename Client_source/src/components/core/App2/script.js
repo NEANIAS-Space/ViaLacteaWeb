@@ -20,6 +20,7 @@ export default {
   data() {
     return {
       dialog: false,
+      mes:"Loading",
       
       /*toggle_one: 1,*/
       logo,
@@ -191,6 +192,7 @@ export default {
       //this.updateToken(token);
       
       this.connect(token);
+      this.mes="3D window";
       setInterval(this.checkToken,1000);
       //setInterval(this.onLoadToken,1500);
       //setInterval(this.onLoadToken, 900000);

@@ -17,7 +17,7 @@ const idsrvAuth = createOidcAuth(
    //   client_id: 'vlkb',
    //   response_type: 'code',
   //    scope: 'openid profile email',
-   //  client_secret: 'e1b4cda4-0ae5-46ba-86fd-1b05f58432e3',
+  //   client_secret: 'e1b4cda4-0ae5-46ba-86fd-1b05f58432e3',
     
     //redirect_uri: `${appRootUrl}main`,
     //redirect_uri: 'http://visivo-server.oact.inaf.it/auth/signinwin/main',

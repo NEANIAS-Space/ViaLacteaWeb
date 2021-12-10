@@ -1,11 +1,11 @@
 
-<v-app>
+<v-app >
 
 
 
 
   <v-app-bar app shrink-on-scroll height="60" align="center"
-      justify="center">
+      justify="center" v-on:click="overlay=false">
 <v-layout row wrap align-center justify-center>
 <v-btn
            color="primary"
@@ -164,13 +164,16 @@
 
 
 
-<v-progress-linear :active="busy" :indeterminate="busy" absolute bottom />
-
-
+<v-progress-linear :active="busy" :indeterminate="busy" absolute bottom height="10" striped>
+  <div style="color:White; font-size: 8px;">
+{{ mes }}
+  </div>
+</v-progress-linear>
+ 
   </v-layout>
   </v-app-bar>
 
-<v-navigation-drawer
+<v-navigation-drawer v-on:click="overlay=false"
 v-model="drawer"
 :mini-variant.sync="mini"
     :hide-overlay="true"
@@ -326,7 +329,23 @@ v-model="drawer"
 
   <v-main :class="$style.appContent">
 
-    <div style="position: relative; width: 100%; height: 100%">
+    <div style="position: relative; width: 100%; height: 100%" v-on:click="overlay=false">
+     <v-overlay :absolute="absolute" :opacity="opacity" :value="overlay"  >
+        Please, input Galactic Coordinates on the left panel
+        <v-icon >
+          mdi-database-search
+        </v-icon>
+
+     </v-overlay>
+      <v-overlay :absolute="absolute" :opacity="opacity" :value="busy"  >
+         <v-container >
+                 <v-layout row justify-center align-center>
+                   <v-progress-circular :active="busy" :indeterminate="busy":size="70" :width="7" color="blue">
+                     {{ mes }}
+                   </v-progress-circular>
+                 </v-layout>
+               </v-container>
+      </v-overlay>
       <remote-rendering-view :client="client" />
     </div>
   </v-main>

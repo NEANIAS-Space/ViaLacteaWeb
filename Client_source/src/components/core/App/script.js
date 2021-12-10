@@ -20,6 +20,8 @@ export default {
   data() {
     return {
       dialog: false,
+      mes:"Loading",
+      overlay: true,
       
       /*toggle_one: 1,*/
       logo,
@@ -100,6 +102,7 @@ export default {
       //this.dialog=true;
       //alert(this.toggle_one);
     },
+    //TODO: future 3D/2D
     gotoOther() {
       let route = this.$router.resolve({ path: "/vlw2" });
       window.open(route.href,"_blank");
@@ -109,6 +112,7 @@ export default {
     getData() {
       //
       this.mini = !this.mini;
+      this.overlay=false
       this.loadData();
 
       //.Cone.loadXMLFITS(res)
@@ -191,6 +195,7 @@ export default {
       //this.updateToken(token);
       
       this.connect(token);
+      //this.mes="2D window";
       setInterval(this.checkToken,1000);
       //setInterval(this.onLoadToken,1500);
       //setInterval(this.onLoadToken, 900000);
