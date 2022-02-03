@@ -5,6 +5,12 @@ import App2 from 'vlw-base/src/components/core/App2';
 import Hello from 'vlw-base/src/components/core/Hello';
 import idsrvAuth from 'vlw-base/src/idsrvAuth';
 Vue.use(VueRouter);
+
+const User = {
+  props: ['id'],
+  template: '<div>user {{ id }}</div>'
+}
+
 const routes = [
   //  {
   //    path: '/',

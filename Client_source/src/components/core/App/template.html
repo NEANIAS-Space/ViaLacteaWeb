@@ -203,7 +203,68 @@ v-model="drawer"
                    </v-list-item-icon>
 
                    <v-list-item-content>
+                     <template>
+                                                            <v-row justify="space-around">
+                                                              <v-col cols="auto">
+                                                                <v-dialog v-model="lfDialog"
+                                                                  transition="dialog-bottom-transition"
+                                                                  max-width="600"
+                                                                >
+                                                                  <template v-slot:activator="{ on, attrs }">
+                                                                    <v-btn
+                                                                      color="primary"
+                                                                      v-bind="attrs"
+                                                                      v-on="on"
+                                                                    >Load local</v-btn>
+                                                                  </template>
+                                                                  <template v-slot:default="dialog">
+                                                                    <v-card>
+                                                                      <v-toolbar
+                                                                        color="primary"
+                                                                        dark
+                                                                      >Datacubes available</v-toolbar>
+                                                                      <v-card-text>
+                                                                        
+                                                                        
+                                                                        <v-treeview
+                                                                          :active.sync="active"
+                                                                          :items="JSON.parse(out_files)"
+                                                                          :open.sync="open"
+                                                                          dense
+                                                                          open-on-click
+                                                                          return-object >
+                                                                          <template v-slot:prepend="{ item }">
+                                                                            <v-icon v-if="!item.children" @click="loadFile(item)">
+                                                                              mdi-file-outline
+                                                                            </v-icon>
+                                                                            
+                                                                          </template>
+                                                                          
+                                                                          
+                                                                          
+                                                                        </v-treeview>
+                                                                       
+                                                                       </v-card-text>
+                                                                      <v-card-actions class="justify-end">
+                                                                        <v-btn
+                                                                          text
+                                                                          @click="dialog.value = false"
+                                                                        >Close</v-btn>
+                                                                      </v-card-actions>
+                                                                    </v-card>
+                                                                  </template>
+                                                                </v-dialog>
+                                                              </v-col>
+                                                              </v-row>
+                                                            
+                                                            </template>
+                                       
+                     
                      <v-list-item-title>Coordinates</v-list-item-title>
+                     
+                    
+                     
+                    
 
                          <v-text-field
                            label="glon"

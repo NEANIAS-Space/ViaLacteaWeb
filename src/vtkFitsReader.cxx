@@ -309,9 +309,12 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
 
         // different member versions of find in the same order as above:
         std::size_t found = str_sp.find(str2);
-
+        
+        int is3D=0;
         if (found == std::string::npos) // if(str_sp!="Continuum") //&&(ov==3))
-        {
+        { //no match that is 3D
+            is3D=1;
+        }
             std::cout << "species " << species << std::endl;
             if (surveyData == "[\n") //first one
                 surveyData += "{\n";
@@ -328,6 +331,15 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
             str_sp += " " + std::string(survey);
             surveyData = surveyData + "\"" + str_sp + "\"";
             surveyData += ",\n";
+            
+            surveyData += "\"species\": ";
+            
+            //str_sp = " " + std::string(species);
+            surveyData = surveyData + "\"" + std::to_string(is3D) + "\"";
+            surveyData += ",\n";
+
+
+
             const char* transition = element->FirstChildElement("Transition")->GetText();
 
             tinyxml2::XMLElement* datacube = element->FirstChildElement("datacube");
@@ -369,7 +381,7 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
             // }
             // std::cout<<surveyData<<std::endl;
             std::cout << "filled data for " << species << std::endl;
-        }
+        
         element = element->NextSiblingElement();
     }
     surveyData += "]";

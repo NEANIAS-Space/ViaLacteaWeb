@@ -5,6 +5,7 @@ export default function createMethods(session) {
     logOut:(rtoken) => session.call("vtk.initialize.logout", [rtoken]),
     loadURL: () => session.call('vtk.cone.url', []),
     resetCamera: () => session.call('vtk.camera.reset', []),
+    getSessionID: () => session.call('vtk.getsession', []),
     updateResolution: (resolution) =>
       session.call('vtk.cone.resolution.update', [resolution]),
     updatePlanes: (planes) =>
@@ -14,6 +15,8 @@ export default function createMethods(session) {
     
     updateFits: (url) =>
       session.call('vtk.cone.fits.update', [url]),
+    updateFitslocal: (fits) =>
+    session.call('vtk.cone.fits.localupdate', [fits]),
     updateCamView: (v) =>
       session.call('vtk.cone.camview.update', [v]),
     updateRotateAxis: (v) =>

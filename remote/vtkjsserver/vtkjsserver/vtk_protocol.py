@@ -1,5 +1,6 @@
 import time
 import math 
+import os
 
 from vtk.web import protocols as vtk_protocols
 
@@ -65,12 +66,16 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
         self.useContours=False;
         self.path=""
+        self.sessionID="session_id_test"
         self.token=""
         self.fitsWasRead=False;
         self.istwoD=False;
         self.istwoDLoaded=False;
         self.istreeDLoaded=False;
-        
+        #folder to scan local files
+        self.m_path = '/home/pvw-user/files'
+        self.m_desc=''
+
     def updateScene(self, renderer, renWin):
         renderer.ResetCamera();
         renWin.GetInteractor().Render();
@@ -82,9 +87,15 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
         self.Ren2.RemoveActor2D(self.currentContourActor);
     
+        #myParentVtkWindow->m_Ren1->RemoveActor2D(currentContourActorForMainWindow);
+        #myParentVtkWindow->ui->qVTK1->update();
+        #myParentVtkWindow->ui->qVTK1->renderWindow()->GetInteractor()->Render();
+        print("to impleent")
+       
+    
+    def SetSession(self,s):
+        self.sessionID=s;
 
-    
-    
     def goContour(self):
         self.removeContour();
         
@@ -129,11 +140,16 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
 
         self.Ren2.AddActor2D(self.currentContourActor);
+        #self.renderWindow.GetInteractor().Render();
         self.renderWindow.Render()
         print("contours are set");
 
 
-   
+    @exportRpc("vtk.getsession")
+    def getSessionID(self):
+        print("Session is")
+        print(self.sessionID);
+        return self.sessionID;
        
         
     @exportRpc("vtk.initialize.token")
@@ -177,10 +193,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         fitsReader.CalculateRMS();
             
 
-        self.max=fitsReader.GetMax();
-        self.min=fitsReader.GetMin();
-        self.rms=fitsReader.GetRMS();
-        
+        self.max=self.fitsReader.GetMax();
+        self.min=self.fitsReader.GetMin();
+        self.rms=self.fitsReader.GetRMS();
+        print("Max_min read");
         #outline
         outlineF = vtk.vtkOutlineFilter();
         outlineF.SetInputData(fitsReader.GetOutput());
@@ -477,6 +493,11 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         print("start")
         #Get renwin and renderers
         
+        #rends=self.renderWindow.GetRenderers()
+        #it=rends.NewIterator()
+        #renderer = rends.GetItemAsObject(0)
+        #renderer2 = rends.GetItemAsObject(1)	
+        #renderer2.SetBackground(0.21,0.23,0.25);
         
         renderer = vtk.vtkRenderer()
         renderer2 = vtk.vtkRenderer()
@@ -730,10 +751,57 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
             
         
+    def scantree(self, path):
+       l=len(os.listdir(path))
+       i=0;
+       for entry in os.scandir(path):
+         if entry.is_dir(follow_symlinks=False):
+            self.m_desc=self.m_desc+'{\n'
+            self.m_desc=self.m_desc+'"path": "';
+            self.m_desc=self.m_desc+path;
+            self.m_desc=self.m_desc+'",\n';
+            self.m_desc=self.m_desc+'"name": "';
+            self.m_desc=self.m_desc+entry.name;
+            self.m_desc=self.m_desc+'",\n';
+            self.m_desc=self.m_desc+'"type": "directory",\n';
+            self.m_desc=self.m_desc+'"children": [\n'
+            yield from self.scantree(entry.path)  
+            self.m_desc=self.m_desc+']\n'
+            i=i+1;
+            if i==l:
+              self.m_desc=self.m_desc+'}\n'
+            else:
+              self.m_desc=self.m_desc+'},\n'
+         else:
+            self.m_desc=self.m_desc+'{\n'
+            self.m_desc=self.m_desc+'"path": "';
+            self.m_desc=self.m_desc+path;
+            self.m_desc=self.m_desc+'",\n'
+            self.m_desc=self.m_desc+'"name": "';
+            self.m_desc=self.m_desc+entry.name;
+            self.m_desc=self.m_desc+'",\n'
+            self.m_desc=self.m_desc+'"type": "file"\n';
+            i=i+1;
+            if i==l:
+              self.m_desc=self.m_desc+'}\n'
+            else:
+              self.m_desc=self.m_desc+'},\n'
+            yield entry
+
     @exportRpc("vtk.initialize")
     def createVisualization(self,token):
         renderWindow = self.getView('-1')
         self.renderWindow=renderWindow;
+        print("Scanning start")
+        self.m_desc=self.m_desc+'[\n'#{\n'
+        
+        for entry in self.scantree(self.m_path):
+          print(entry)
+        self.m_desc=self.m_desc+']\n'
+        
+        print (self.m_desc)
+
+
         # Set Renderers and Token
         self.setRenderersToken(token);
         #self.setFits();
@@ -770,7 +838,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
           #currently is setted this one
           self.istreeDLoaded=True;
 
-        return -1; #self.resetCamera()
+        return self.m_desc; #-1; #self.resetCamera()
         
 
     def ResetCam():
@@ -786,19 +854,17 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
     @exportRpc("vtk.cone.fits.update")
     def updateFits(self,url):
-        #if self.fitsWasRead==False: #not loaded as far
-        #   #uncoment for multiuser
-        #   self.fitsReader.SetTempPath(self.path)
-        #   self.fitsReader.SetSessionToken(self.token)
-        
-        #   self.fitsReader.is3D=True;
-           
-           
 
-        print ("check scene")
-        
-        print ("ResetCam")
-        print("stat updating");
+        print ("check scene2")
+        if self.fitsWasRead==False: #not loaded as far
+           #uncoment for multiuser
+           self.fitsReader.SetTempPath(self.path)
+           self.fitsReader.SetSessionToken(self.token)
+
+        self.fitsReader.is3D=True;
+        print("Start downloading from");
+        print(url)
+
         result=self.fitsReader.DownloadSurveyDataCube(url);
         if result:
            print("stat updating2");
@@ -808,12 +874,9 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
            self.min=self.fitsReader.GetMin();
            self.rms=self.fitsReader.GetRMS();
            
-           #update scene
-           #if self.fitsWasRead==False:
-           #   self.createScene3D();
-           
-           
-        
+           #udate scene
+           if self.fitsWasRead==False:
+             self.createScene3D();
            
         
            fits=self.fitsReader.GetOutput();
@@ -828,6 +891,74 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
            print("Cube loaded")
         #self.ResetCamera()
         return result;
+
+
+    @exportRpc("vtk.cone.fits.localupdate")
+    def updateFitslocal(self,fits):
+           
+
+        print ("check scene2 local")
+        if self.fitsWasRead==False: #not loaded as far
+           #uncoment for multiuser
+           #self.fitsReader.SetTempPath('')
+           self.fitsReader.SetSessionToken(self.token)
+
+        self.fitsReader.is3D=True;
+        print("Start downloading from");
+        print(fits)
+        #result=self.fitsReader.DownloadSurveyDataCube(url);
+        self.fitsReader.SetFileName(fits);
+        #SetFileName("../../data/vlkb-merged_3D_2021-02-18_12-36-07_979531_16774-16806.fits");
+        
+        print("Downloaded");
+        
+        result=self.fitsReader.CalculateRMS();
+           
+        self.max=self.fitsReader.GetMax();
+        self.min=self.fitsReader.GetMin();
+        self.rms=self.fitsReader.GetRMS();
+        print("stat updating2");
+        
+        
+        if self.fitsWasRead==False:
+             self.createScene3D();
+        
+        self.textActor.SetInput(self.fitsReader.GetDataCubeData())
+        self.textActor.Modified();
+        self.textActor.GetMapper().Update()
+        
+        #renderWindow = self.getView('-1')
+        # renderWindow.Modified() # either modified or render
+        #renderer.ResetCamera()
+        #renderWindow.Render()
+        #self.getApplication().InvokeEvent('UpdateEvent')
+        # return self.resetCamera()
+        
+        fits=self.fitsReader.GetOutput();
+        bounds=fits.GetBounds()
+        #print("Bounds updated ");
+        self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
+        self.frustumSource.Update()
+        
+        
+        
+        #TODO reset camera
+        print("Pos updated ");
+        #self.resetCamera()
+        self.Ren1.ResetCamera()
+        camera = self.Ren1.GetActiveCamera()
+        camera.SetViewUp( 0, 1, 0 )
+        self.cam_init_pos=self.Ren1.GetActiveCamera( ).GetPosition();
+        self.cam_init_foc=self.Ren1.GetActiveCamera( ).GetFocalPoint();
+        self.resetCamera();  
+        print("Bounds updated ");
+        
+        
+        
+        return result;
+
+
+
 
 
     @exportRpc("vtk.camera.reset")
@@ -895,10 +1026,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
         self.fitsReader.GenerateVLKBUrl(res);
         result= self.fitsReader.CalculateRMS();
-        
-        self.max=fitsReader.GetMax();
-        self.min=fitsReader.GetMin();
-        self.rms=fitsReader.GetRMS();
+        print ("Get to Max");
+        self.max=self.fitsReader.GetMax();
+        self.min=self.fitsReader.GetMin();
+        self.rms=self.fitsReader.GetRMS();
         
         if self.fitsWasRead==False:
            self.createScene3D();

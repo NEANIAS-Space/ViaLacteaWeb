@@ -4,6 +4,11 @@ import RemoteRenderingView from 'vlw-base/src/components/widgets/RemoteRendering
 //import { createOidcAuth, SignInType } from 'vlw-base/src/vue-oidc-client';
 //import protocols from 'vlw-base/src/protocols';
 import idsrvAuth from 'vlw-base/src/idsrvAuth';
+
+
+
+
+//const dirTree = require("directory-tree");
 // ----------------------------------------------------------------------------
 // Component API
 // ----------------------------------------------------------------------------
@@ -20,6 +25,7 @@ export default {
   data() {
     return {
       dialog: false,
+      lfDialog:false,
       mes:"Loading",
       overlay: true,
       
@@ -73,6 +79,8 @@ export default {
       toggle_cam: 'CONE_CAMERA',
       rotateX: 'CONE_ROTATE',
       is2D: 'CONE_2D',
+      out_files:'WS_JSONFILES',
+      main_session:'WS_MAIN_SESSION',
     }),
   },
   methods: {
@@ -94,6 +102,7 @@ export default {
       setCameraView: 'CONE_SETCAMERAVIEW',
       setRotate: 'CONE_SETROTATE',
       set2D:'CONE_SET2D',
+      updateFitslocal:'WS_UPDATELOCALFITS',
 
       
      
@@ -103,9 +112,35 @@ export default {
       //alert(this.toggle_one);
     },
     //TODO: future 3D/2D
-    gotoOther() {
-      let route = this.$router.resolve({ path: "/vlw2" });
-      window.open(route.href,"_blank");
+    gotoOther(url) {
+      this.$appName =  "New value";
+      this.$color = 'session_id'
+      var param="/vlw2"+"?id="+this.main_session+'&url='+encodeURIComponent(url);
+      
+      
+      var route = this.$router.resolve({ path: param });
+     // setTimeout(function() {
+        //your code to be executed after 1 second
+       
+        window.open(route.href,"_blank");
+     // }, 1000);
+      
+    },
+   testFile() {
+      if (this.active.length>0)
+    {
+      var l=this.active.length-1
+      console.log('TEST', this.active[l])
+      //this.active.splice(0, 1)
+    }
+    },
+    loadFile(item)
+    {      this.lfDialog = false;
+            var fullp=item.path+"/"+item.name;
+            console.log(fullp)
+            //TODO integrate file opening
+            //this.gotoOther("testFile_url");
+            this.updateFitslocal(fullp)
     },
     
     //GetInitial data
@@ -159,7 +194,16 @@ export default {
        },
     onButtonClick(item) {
       this.mini = !this.mini;
-      this.loadDataShort(item.url);
+      var is3D=parseInt(item.species)
+      console.log(is3D)
+      if (is3D==0) {
+        //this.loadDataShort(item.url); //3d loading
+        alert ("2D to be implemented")
+        this.loadDataShort(item.url);
+      } else {
+        //TODO check data transmission
+        this.gotoOther(item.url);
+      }
       //.then(
       //    function(configResponse) {
       //        return alert("Done");
@@ -193,15 +237,24 @@ export default {
 
       //this.callFunction();
       //this.updateToken(token);
-      
+      console.log("begin")
       this.connect(token);
       //this.mes="2D window";
       setInterval(this.checkToken,1000);
+      
+      //
       //setInterval(this.onLoadToken,1500);
       //setInterval(this.onLoadToken, 900000);
       
       //this.onLoadToken();
       
+      //Loading directory tree
+      //const dirTree = require("directory-tree");
+     // const tree = dirTree("/home/evgeniya/Documents/GitHub/files/");
+      //alert (tree);//JSON.stringify(tree));
+      //const tree = dirTree('/home/evgeniya/Documents/GitHub/files', {extensions:/\.fits$/}, null, (item, PATH, stats) => {
+     //   console.log(tree);
+      //});
  //   }
     
   },

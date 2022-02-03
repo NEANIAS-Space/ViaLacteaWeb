@@ -12,6 +12,12 @@ function createStore() {
       vlw,
       wslink,
     },
+      state: {
+        $color: 'green'
+      },
+      mutations: {
+        update$color: function(state, newColor) { state.$color = newColor; }
+      }
   });
 }
 
