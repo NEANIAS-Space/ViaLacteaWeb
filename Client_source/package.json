@@ -10,6 +10,7 @@
   "dependencies": {
     "@mdi/font": "^3.9.97",
     "core-js": "^2.6.5",
+    "sortablejs": "^1.10.2",
     "directory-tree": "^3.0.1",
     "material-design-icons": "^3.0.1",
     "oidc-client": "^1.11.5",

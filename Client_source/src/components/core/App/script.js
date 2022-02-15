@@ -4,6 +4,7 @@ import RemoteRenderingView from 'vlw-base/src/components/widgets/RemoteRendering
 //import { createOidcAuth, SignInType } from 'vlw-base/src/vue-oidc-client';
 //import protocols from 'vlw-base/src/protocols';
 import idsrvAuth from 'vlw-base/src/idsrvAuth';
+import Sortable from 'sortablejs';
 
 
 
@@ -24,6 +25,31 @@ export default {
 
   data() {
     return {
+      headers2: [
+        {
+          text: ' ',
+          align: 'start',
+          sortable: false,
+          value: 'name',
+        },
+      ],
+      desserts: [
+        {
+          name: 'image layer 1',
+        },
+        {
+          name: 'image layer 2',
+        },
+        {
+          name: 'image layer 3',
+        },
+        {
+          name: 'image layer 4',
+        },
+        {
+          name: 'image layer 5',
+        },
+      ],
       dialog: false,
       lfDialog:false,
       mes:"Loading",
@@ -103,7 +129,7 @@ export default {
       setRotate: 'CONE_SETROTATE',
       set2D:'CONE_SET2D',
       updateFitslocal:'WS_UPDATELOCALFITS',
-
+      loadImage:'WS_LOADIMAGE',   
       
      
     }),
@@ -111,11 +137,16 @@ export default {
       //this.dialog=true;
       //alert(this.toggle_one);
     },
+    saveOrder (event) {
+         const movedItem = this.desserts.splice(event.oldIndex, 1)[0];
+         this.desserts.splice(event.newIndex, 0, movedItem);
+         alert ("Moved from "+event.oldIndex+" to "+event.newIndex)
+       },
     //TODO: future 3D/2D
     gotoOther(url) {
       this.$appName =  "New value";
       this.$color = 'session_id'
-      var param="/vlw2"+"?id="+this.main_session+'&url='+encodeURIComponent(url);
+      var param="/vlw2"+"?id="+this.main_session+'&local=False'+'&url='+encodeURIComponent(url);
       
       
       var route = this.$router.resolve({ path: param });
@@ -138,9 +169,17 @@ export default {
     {      this.lfDialog = false;
             var fullp=item.path+"/"+item.name;
             console.log(fullp)
-            //TODO integrate file opening
-            //this.gotoOther("testFile_url");
-            this.updateFitslocal(fullp)
+            
+            //this.updateFitslocal(fullp)
+            
+            var param="/vlw2"+"?id="+this.main_session+'&local=True'+'&url='+encodeURIComponent(fullp);
+                 
+                 
+                 var route = this.$router.resolve({ path: param });
+                // setTimeout(function() {
+                   //your code to be executed after 1 second
+                  
+                   window.open(route.href,"_blank");
     },
     
     //GetInitial data
@@ -199,7 +238,7 @@ export default {
       if (is3D==0) {
         //this.loadDataShort(item.url); //3d loading
         alert ("2D to be implemented")
-        this.loadDataShort(item.url);
+        this.loadImage(item.url);
       } else {
         //TODO check data transmission
         this.gotoOther(item.url);
@@ -257,5 +296,18 @@ export default {
       //});
  //   }
     
+  },
+  directives: {
+    sortableDataTable: {
+      bind (el, binding, vnode) {
+        const options = {
+          animation: 150,
+          onUpdate: function (event) {
+            vnode.child.$emit('sorted', event)
+          }
+        }
+        Sortable.create(el.getElementsByTagName('tbody')[0], options)
+      }
+    }
   },
 };

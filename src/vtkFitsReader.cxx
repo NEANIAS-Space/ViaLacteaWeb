@@ -56,7 +56,8 @@ bool vtkFitsReader::DownloadSurveyDataCube(std::string str_u)
     std::cout << "Check with download" << std::endl;
 
     DownloadXMLFromUrl(str_u.c_str());
-
+    
+std::cout<<"File downloaded"<<std::endl;
     tinyxml2::XMLDocument doc2(true, tinyxml2::COLLAPSE_WHITESPACE);
     doc2.LoadFile(m_fileToDownload.c_str());
 
@@ -65,7 +66,7 @@ bool vtkFitsReader::DownloadSurveyDataCube(std::string str_u)
     if (node != NULL) //there is a datacube
     {
         const char* url2 = doc2.FirstChildElement("results")->FirstChildElement("URL")->GetText();
-
+        std::cout<<"URL to download "<<url2<<std::endl;
         //For some reason had to remove whitespace manually
         //std::string str = std::string(url2);
         //std::string::iterator end_pos = std::remove(str.begin(), str.end(), ' ');
@@ -205,11 +206,12 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
         std::cout << "overlap " << overlap << std::endl;
 
         int ov = ::atoi(overlap);
-
-        if (str_sp != "Continuum") //&&(ov==3))
+        bool  isThis3D=(str_sp != "Continuum")? true: false;
+        
+        if (isThis3D==this->is3D) //&&(ov==3))
         {
             found = true;
-            std::cout << "Proceed with downloading file" << std::endl;
+            std::cout << "Proceed with downloading file that is 3D "<<isThis3D << std::endl;
 
             //-------------
             const char* url = pElement->FirstChildElement("datacube")->FirstChildElement("Access")->FirstChildElement("URL")->GetText();
@@ -973,9 +975,6 @@ void vtkFitsReader::printerror(int status)
 // fitsio distribution.
 void vtkFitsReader::CalculateRMS()
 {
-
-    ReadHeader();
-
     vtkStructuredPoints* output = (vtkStructuredPoints*)this->GetOutput();
     fitsfile* fptr;
     int status = 0, nfound = 0, anynull = 0;
@@ -991,7 +990,61 @@ void vtkFitsReader::CalculateRMS()
         printerror(status);
 
     delete[] fn;
+
     vtkFloatArray* scalars = vtkFloatArray::New();
+
+            if (!(this->is3D))
+                    {
+                    // read the NAXIS1 and NAXIS2 keyword to get image size 
+                    // if ( fits_read_keys_lng(fptr, "NAXIS", 1, 3, naxes, &nfound, &status) )
+                    if (fits_read_keys_lng(fptr, "NAXIS", 1, 2, naxes, &nfound, &status))
+                        printerror(status);
+
+                    npixels = naxes[0] * naxes[1]; 
+                    fpixel = 1;
+                    nullval = 0; 
+                    datamin = 1.0E30;
+                    datamax = -1.0E30;
+
+                    output->SetDimensions(naxes[0], naxes[1], 1);
+
+                    // output->SetOrigin(0.0, 0.0, 0.0);
+                    output->SetOrigin(1.0, 1.0, 0.0);
+
+                    scalars->Allocate(npixels);
+
+                    while (npixels > 0) {
+
+                        nbuffer = npixels;
+                        if (npixels > buffsize)
+                            nbuffer = buffsize;
+
+                        if (fits_read_img(fptr, TFLOAT, fpixel, nbuffer, &nullval, buffer, &anynull,
+                                          &status))
+                            printerror(status);
+
+                        for (ii = 0; ii < nbuffer; ii++) {
+
+                            // if (isnanf(buffer[ii])) buffer[ii] = -1000000.0; // hack for now
+                            if (std::isnan(buffer[ii]))
+                                buffer[ii] = -1000000.0; // hack for now
+
+                            scalars->InsertNextValue(buffer[ii]);
+
+                            if (buffer[ii] < datamin && buffer[ii] != -1000000.0)
+                                datamin = buffer[ii];
+                            if (buffer[ii] > datamax && buffer[ii] != -1000000.0)
+                                datamax = buffer[ii];
+                        }
+
+                        npixels -= nbuffer; 
+                        fpixel += nbuffer; 
+                    }
+                }
+            else 
+{
+
+  
     if (fits_read_keys_lng(fptr, "NAXIS", 1, 3, naxes, &nfound, &status))
         printerror(status);
 
@@ -1090,12 +1143,12 @@ void vtkFitsReader::CalculateRMS()
     double means = meansquare / n;
     rms = sqrt(means);
     // sigma=qSqrt(sigma/n);
-
+}
     if (fits_close_file(fptr, &status))
         printerror(status);
 
     output->GetPointData()->SetScalars(scalars);
-    std::cout << minmaxslice[0][0] << minmaxslice[0][1] << std::endl;
+ //   std::cout << minmaxslice[0][0] << minmaxslice[0][1] << std::endl;
     return;
 }
 int vtkFitsReader::GetNaxes(int i)

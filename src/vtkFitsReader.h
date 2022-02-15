@@ -54,6 +54,7 @@ public:
     double getInitSlice() { return initSlice; }
 
     bool is3D;
+    void Set3D(bool s){is3D=s;};
     void CalculateRMS();
     void SetTempPath(std::string path)
     {

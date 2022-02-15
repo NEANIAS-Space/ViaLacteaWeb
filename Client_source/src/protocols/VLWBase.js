@@ -2,6 +2,7 @@
 export default function createMethods(session) {
   return {
     createVisualization: (token) => session.call('vtk.initialize', [token]),
+    createImageVisualization: (token) => session.call('vtk.image.initialize', [token]),
     logOut:(rtoken) => session.call("vtk.initialize.logout", [rtoken]),
     loadURL: () => session.call('vtk.cone.url', []),
     resetCamera: () => session.call('vtk.camera.reset', []),
@@ -21,7 +22,8 @@ export default function createMethods(session) {
       session.call('vtk.cone.camview.update', [v]),
     updateRotateAxis: (v) =>
       session.call('vtk.cone.rotate.update', [v]),
-      
+   loadImage:(url) =>
+      session.call('vtk.cone.load.image', [url]),
     updateDim: (v) =>
       session.call('vtk.cone.dim.update', [v]),
       

@@ -17,7 +17,7 @@ export default {
     busy: false,
     json: '[{}]',
     dc_params: [1,10,1,1060],
-    files_params:'',
+    files_params:'[{}]',
     main_session:'',
     fits_url:'',
     token:'',
@@ -82,7 +82,18 @@ export default {
         
         console.log(s);
         if (state.client) {
-               state.client.getRemote().VLWBase.updateFits(s).catch(console.error);
+               state.client.getRemote().VLWBase.updateFits(s)
+                  .then((result) => {
+                  console.log("Local Fits loaded");
+                  
+                  state.client.getRemote().VLWBase.getDataCubeData().then((result) => {
+                    state.dc_params = result;
+                    //alert(state.dc_params[3]);
+                   //console.log("local file params", state.dc_params);
+                    return state.dc_params;
+                    
+                  })
+                  })
              }
              else {console.error("Client still not set")
                dispatch('WS_INITIALIZE_SERVER_SHORT',state.token).then(() => {
@@ -104,12 +115,14 @@ export default {
                                   state.client.getRemote().VLWBase.getDataCubeData().then((result) => {
                                     state.dc_params = result;
                                     //alert(state.dc_params[3]);
-                                  
+                                   console.log(state.dc_params);
                                     return state.dc_params;
                                     
                                   })
                                  
-                        
+                            
+                          
+                
                     
                         })
                       
@@ -258,8 +271,8 @@ export default {
           return state.main_session;
           }).then(
           function() {
-          state.client.getRemote().VLWBase.createVisualization(token).then((result) => {
-           
+          //state.client.getRemote().VLWBase.createVisualization(token).then((result) => {
+           state.client.getRemote().VLWBase.createImageVisualization(token).then((result) => {
             if(result=='') return alert("No files in directory");
             else{
             
@@ -326,6 +339,7 @@ export default {
         // var t0 = performance.now();
 
         //clientToConnect.beginBusy();
+        //console.log("planes ", state.dc_params)
         state.client
           .getRemote()
           .VLWBase.updatePlanes(planes)
@@ -418,6 +432,16 @@ export default {
               
       }
     },
+    
+    WS_LOADIMAGE({ state }, url) {
+      if (state.client) {
+        
+        state.client.getRemote().VLWBase.loadImage(url);
+                
+              
+      }
+    },
+    
     WS_UPDATE_XMLFITS({ state }, res) {
       if (state.client) {
         // console.log("Start loading fitx with parameters2 " + res);

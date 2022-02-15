@@ -246,9 +246,22 @@ export default {
       
       this.connect_short(token).then(() => {
            var url= decodeURIComponent(this.$route.query.url)
+           var local= this.$route.query.local;
                 console.log(url)
-                setTimeout(this.setFitsUrl(url), 3000);
-                setInterval(this.checkToken,1000);
+                if (local=="False")
+                {
+                  setTimeout(this.setFitsUrl(url), 3000);
+                 
+                  
+                }
+                else
+                {
+                  //loading local
+                
+                setTimeout(this.updateFitslocal(url), 3000);
+                
+              }
+              setInterval(this.checkToken,1000);
               });
       
       //this.setFitsUrl(this.$route.query.url );
