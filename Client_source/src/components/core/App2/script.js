@@ -251,7 +251,7 @@ export default {
                 if (local=="False")
                 {
                   setTimeout(this.setFitsUrl(url), 3000);
-                 
+                  console.log("loading fits from url")
                   
                 }
                 else

@@ -27,6 +27,7 @@ set(LIB_SPECIAL
     tinyxml2.cpp
     astroutils.cpp
     libwcs/fitsfile.c
+    libwcs/imgetwcs.c
     libwcs/wcs.c
     libwcs/wcslib.c
     libwcs/platepos.c

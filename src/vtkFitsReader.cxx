@@ -9,6 +9,7 @@
 #include "vtkPointData.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include <algorithm>
+#include "astroutils.h"
 #include <cmath>
 #include <curl/curl.h>
 #include <iostream> // std::cout
@@ -51,6 +52,22 @@ vtkFitsReader::vtkFitsReader()
     m_fitsFile_temp = "temp2.fits";
     //m_fileToDownload=m_tempPath+m_fileToDownload;
 }
+
+void vtkFitsReader::ComputeAstroCords(float inp1, float inp2) {
+    scaledPixel=AstroUtils().arcsecPixel(GetFileName())/AstroUtils().arcsecPixel(GetFileName());
+//    vis->GetOutput()->SetSpacing(scaledPixel,scaledPixel,1);
+
+
+    
+    AstroUtils().xy2sky(GetFileName(),inp1,inp2,sky_coord_gal,3);
+    std::cout<<"0.0 xy2sky "<<sky_coord_gal[0]<<sky_coord_gal[1]<<std::endl;
+
+    
+    AstroUtils().sky2xy(GetFileName(), sky_coord_gal[0], sky_coord_gal[1], coord);
+    //vis->GetOutput()->SetOrigin( coord[0],coord[1],0);
+    std::cout<<"0.0 sky2xy "<<coord[0]<<coord[1]<<std::endl;
+    }
+
 bool vtkFitsReader::DownloadSurveyDataCube(std::string str_u)
 {
     std::cout << "Check with download" << std::endl;
@@ -298,15 +315,20 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
           }
         ]
         */
+        
     surveyData = "[\n";
 
     tinyxml2::XMLElement* element { doc.FirstChildElement("results")->FirstChildElement("survey") };
     while (element != nullptr || NULL) {
         const char* species = element->FirstChildElement("Species")->GetText();
-
+const char* survey = element->FirstChildElement("Survey")->GetText();
+const char* transition = element->FirstChildElement("Transition")->GetText();
+tinyxml2::XMLElement* datacube = element->FirstChildElement("datacube");
+        
         //std::cout<<"overlap "<<overlap<<std::endl;
 
         std::string str_sp = CleanString(species);
+        
         std::string str2("Continuum");
 
         // different member versions of find in the same order as above:
@@ -323,14 +345,24 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
             else
                 surveyData += ",\n{\n";
 
-            surveyData += "\"survey\":";
-            //fill surveyData
+            str_sp += " " + std::string(survey);
+            bool first=true;
+            while (datacube != nullptr || NULL) {
+                
+                std::string url_cutout = "";
+                tinyxml2::XMLElement* node = datacube->FirstChildElement("Access")->FirstChildElement("URL");
+                if (node->Attribute("type", "cutout")) {
+           if(!first)
+               surveyData += ",\n{\n";
+           //fill surveyData
             //Species
             //overlap description
             //overlap code
             //access URL type="cutout"
-            const char* survey = element->FirstChildElement("Survey")->GetText();
-            str_sp += " " + std::string(survey);
+            surveyData += "\"survey\":";
+            
+            
+            
             surveyData = surveyData + "\"" + str_sp + "\"";
             surveyData += ",\n";
             
@@ -341,12 +373,9 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
             surveyData += ",\n";
 
 
+            
 
-            const char* transition = element->FirstChildElement("Transition")->GetText();
-
-            tinyxml2::XMLElement* datacube = element->FirstChildElement("datacube");
-
-            //  while (datacube != nullptr || NULL) {
+            //  
             //check several datacubes  mosaic type
             const char* overlap_desc = datacube->FirstChildElement("overlap")->FirstChildElement("description")->GetText();
             std::string str_desc = std::string(transition);
@@ -358,9 +387,7 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
             surveyData = surveyData + "\"" + str_desc + "\"";
             surveyData += ",\n";
 
-            std::string url_cutout = "";
-            tinyxml2::XMLElement* node = datacube->FirstChildElement("Access")->FirstChildElement("URL");
-            if (node->Attribute("type", "cutout")) {
+            
                 //get url for xml
                 url_cutout = std::string(node->GetText());
                 auto ps = url_cutout.find(" ");
@@ -373,14 +400,17 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
                     url_cutout.replace(ps, 1, "%2B");
                     ps = url_cutout.find("+");
                 }
-            }
+            
             //form the survey json
             surveyData += "\"url\": ";
             surveyData = surveyData + "\"" + url_cutout + "\"";
             surveyData += "\n }";
+            first=false;
+            }
 
-            // datacube = datacube->NextSiblingElement();
-            // }
+             datacube = datacube->NextSiblingElement();
+             std::cout<<"Data from "<< url_cutout<<std::endl;
+             }
             // std::cout<<surveyData<<std::endl;
             std::cout << "filled data for " << species << std::endl;
         
@@ -1012,6 +1042,7 @@ void vtkFitsReader::CalculateRMS()
                     output->SetOrigin(1.0, 1.0, 0.0);
 
                     scalars->Allocate(npixels);
+                    std::cout<<"Reading data with 2D "<< npixels<<std::endl;
 
                     while (npixels > 0) {
 
@@ -1043,7 +1074,7 @@ void vtkFitsReader::CalculateRMS()
                 }
             else 
 {
-
+    std::cout<<"3D file reading"<<std::endl;
   
     if (fits_read_keys_lng(fptr, "NAXIS", 1, 3, naxes, &nfound, &status))
         printerror(status);
@@ -1148,6 +1179,7 @@ void vtkFitsReader::CalculateRMS()
         printerror(status);
 
     output->GetPointData()->SetScalars(scalars);
+    std::cout<<"Fits file was read"<<std::endl;
  //   std::cout << minmaxslice[0][0] << minmaxslice[0][1] << std::endl;
     return;
 }

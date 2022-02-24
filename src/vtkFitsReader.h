@@ -35,7 +35,12 @@ public:
     bool LogOut();
     void SetRefreshToken(std::string t){m_refreshToken=t;};
 
- 
+    void ComputeAstroCords(float inp1, float inp2) ;
+    double *GetCoords(){return &coord[0];};
+    double GetXCoord(){return coord[0];};
+    double GetYCoord(){return coord[1];};
+    double GetScaledPixel(){return this->scaledPixel;};
+
     bool GenerateVLKBUrl(std::string data);
     bool DownloadSurveyDataCube(std::string urlString);
 
@@ -130,6 +135,10 @@ protected:
     std::string cut;
 
     std::string m_dataCubeDesc;
+    
+    double sky_coord_gal[2];
+    double coord[3];
+    double scaledPixel;
 
     float datamin;
     float datamax;

@@ -83,9 +83,13 @@ export default {
     },
     async CONE_PLANES_UPDATE({ state, dispatch }, planes) {
       const r = Number(planes);
-      state.planes = r;
+      if(Math.abs(state.planes-r)>=1.0){
+        state.planes = r;
+        //console.log(state.planes)
+        
+        return dispatch('WS_UPDATE_PLANES', r);
+      }
       
-      return dispatch('WS_UPDATE_PLANES', r);
     },
     async CONE_CONTOURS_UPDATE({ state, dispatch }, contours) {
       const r = Boolean(contours);

@@ -76,6 +76,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.m_path = '/home/pvw-user/files'
         #self.m_path = '/home/evgeniya/Documents/GitHub/files'
         self.m_desc=''
+        self.isTwoDim=False;
+
 
     def updateScene(self, renderer, renWin):
         renderer.ResetCamera();
@@ -538,7 +540,23 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
              sliceB=self.imageStack.GetImages().GetItemAsObject(sourceStart);
              sliceB.GetProperty().SetLayerNumber(destinationRow-1)
              #vtkImageSlice::SafeDownCast(imageStack->GetImages()->GetItemAsObject(sourceStart))->GetProperty()->SetLayerNumber(destinationRow-1);
-    
+        #self.Ren3.ResetCamera()
+        self.renderWindow.Render()
+        self.getApplication().InvalidateCache(self.renderWindow)
+        self.getApplication().InvokeEvent('UpdateEvent')
+
+
+
+    @exportRpc("vtk.cone.getinfo")   
+    def getInfo(self):
+
+        survey=self.fitsReader.getSurvey()
+        species=self.fitsReader.getSpecies()
+        transition=self.fitsReader.getTransition()
+        desc= survey+" "+species+" "+transition;
+        print(desc);
+        return desc;
+
 
     @exportRpc("vtk.cone.addlayerimage")   
     def addLayerImage(self):
@@ -563,24 +581,19 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
         #SelectLookTable("Gray",lut);
         
-        #survey=self.fitsReader.GetSurvey()
-        #species=self.fitsReader.GetSpecies()
-        #transition=self.fitsReader.GetTransition()
-        #, survey, species,transition
-        
-        #vtkfitstoolwidgetobject *img=new vtkfitstoolwidgetobject(0);
-
-        #img->setName(QString::fromUtf8(vis->GetFileName().c_str()));
-        #img->setFitsReader(vis);
-        #if (survey.compare("")!=0 && species.compare("")!=0 && transition.compare("")!=0)
-        #{
-        #img->setSpecies(species);
-        #img->setTransition(transition);
-        #img->setSurvey(survey);
-        #}
-        
+       
         #and etc in   https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/fce9cd964fa311afdf27353f0b6bc21918e5e603/Code/src/vtkwindow_new.cpp#L3742
         
+        self.fitsReader.ComputeAstroCords(0,0);
+        coord=[0,0,0]; #self.fitsReader.GetCoords()
+        coord[0]=self.fitsReader.GetXCoord()
+        coord[1]=self.fitsReader.GetYCoord()
+
+        print("Coords =",coord[0],coord[1]);
+        scaledPixel=self.fitsReader.GetScaledPixel()
+        print("Scaled Pix = ",scaledPixel);
+        self.fitsReader.GetOutput().SetSpacing(scaledPixel,scaledPixel,1);
+        self.fitsReader.GetOutput().SetOrigin( coord[0],coord[1],0);
         
         colors =  vtk.vtkImageMapToColors();
         colors.SetInputData(self.fitsReader.GetOutput());
@@ -595,20 +608,28 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         imageSliceLayer.GetProperty().SetOpacity(0.5);
         imageSliceLayer.GetProperty().SetInterpolationTypeToNearest();
         
-        #double angle  = 0;
+        angle  = 0;
 
-        #double x1=coord[0];
-        #double y1=coord[1];
+        x1=coord[0];
+        y1=coord[1];
 
-        #..
+        self.fitsReader.ComputeAstroCords(0,100);
+        coord[0]=self.fitsReader.GetXCoord()
+        coord[1]=self.fitsReader.GetYCoord()
 
-       
+        if x1!=coord[0]:
+    
+           m = fabs((coord[1]-y1)/(coord[0]-x1));
+           angle =1*( 90 - math.atan(m)*180/math.pi);
+        
+        
+
+    
         transform = vtk.vtkTransform()
   
         bounds=self.fitsReader.GetOutput().GetBounds()
        
-        # TODO: angle should be calculated above
-        angle=0.0;
+       
         # Rotate about the origin point (world coordinates)
         transform.Translate(bounds[0], bounds[2], bounds[4]);
         transform.RotateWXYZ(angle, 0, 0, 1);
@@ -935,8 +956,17 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
     @exportRpc("vtk.image.initialize")
     def createImageVisualization(self,token):
+        self.isTwoDim=True;
+        
         renderWindow = self.getView('-1')
         self.renderWindow=renderWindow;
+
+        interactor = vtk.vtkInteractorStyleImage()
+        self.renderWindow.GetInteractor().SetInteractorStyle(interactor)        
+
+        print("Interactor type2") 
+        name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
+        print(name)
         print("Local files scanning")
         self.m_desc=self.m_desc+'[\n'#{\n'
         
@@ -1032,7 +1062,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         if self.fitsWasRead==False:
               #self.createScene3D();
               self.createImageStack();
-              
+              print("First image was added")
+        else:
+              self.addLayerImage()
+              print("Secondary image was added")
         #self.textActor.SetInput(self.fitsReader.GetDataCubeData())
         #self.textActor.Modified();
         #self.textActor.GetMapper().Update()
@@ -1271,7 +1304,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
    
     @exportRpc("vtk.cone.urlfits")
     def loadXMLFITS(self,res):
-        print("FitsReader update call with ");
+        print("2D FitsReader update call with ");
         # str_p=str(p1)+","+str(p2);
         # str_r=str(r1)+","+str(r2);
         print(res);
@@ -1289,12 +1322,13 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.fitsReader.SetSessionToken(self.token)
 
         self.fitsReader.is3D=False;
-        print(self.token);
+        #print(self.token);
         
         self.fitsReader.GenerateVLKBUrl(res);
         self.fitsReader.Set3D(False);
-        result= self.fitsReader.CalculateRMS();
-        print ("Get to Max");
+        print("VLKB generated and data Computed")
+        self.fitsReader.CalculateRMS();
+        print("VLKB generated and data Computed, RMS calculated")
         self.max=self.fitsReader.GetMax();
         self.min=self.fitsReader.GetMin();
         self.rms=self.fitsReader.GetRMS();
@@ -1302,10 +1336,11 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         if self.fitsWasRead==False:
            #self.createScene3D();
            self.createImageStack();
+           print("Image stack was created")
         res_str=self.fitsReader.GetSurveysData();
-        self.textActor.SetInput(self.fitsReader.GetDataCubeData())
-        self.textActor.Modified();
-        self.textActor.GetMapper().Update()
+        #self.textActor.SetInput(self.fitsReader.GetDataCubeData())
+        #self.textActor.Modified();
+        #self.textActor.GetMapper().Update()
         
         #renderWindow = self.getView('-1')
         # renderWindow.Modified() # either modified or render
@@ -1314,22 +1349,24 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #self.getApplication().InvokeEvent('UpdateEvent')
         # return self.resetCamera()
         
-        fits=self.fitsReader.GetOutput();
-        bounds=fits.GetBounds()
+        #fits=self.fitsReader.GetOutput();
+        #bounds=fits.GetBounds()
         #print("Bounds updated ");
-        self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
-        self.frustumSource.Update()
+        #self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
+        #self.frustumSource.Update()
         
         #TODO reset camera
         print("Pos updated ");
         #self.resetCamera()
-        self.Ren1.ResetCamera()
-        camera = self.Ren1.GetActiveCamera()
-        camera.SetViewUp( 0, 1, 0 )
-        self.cam_init_pos=self.Ren1.GetActiveCamera( ).GetPosition();
-        self.cam_init_foc=self.Ren1.GetActiveCamera( ).GetFocalPoint();
+        #self.Ren1.ResetCamera()
+        #camera = self.Ren1.GetActiveCamera()
+        #camera.SetViewUp( 0, 1, 0 )
+        #self.cam_init_pos=self.Ren1.GetActiveCamera( ).GetPosition();
+        #self.cam_init_foc=self.Ren1.GetActiveCamera( ).GetFocalPoint();
         print("Bounds updated ");
-        #self.Ren1.Render();
+        #self.Ren3.ResetCamera()
+        #self.Ren3.Render();
+        print("XML fits updated");
         return res_str;
         
     @exportRpc("vtk.cone.loadcubedata")
@@ -1338,10 +1375,13 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         tmin=self.fitsReader.GetMin()
         tmax=self.fitsReader.GetMax()
         rms=self.fitsReader.GetRMS()
-        tmin/=rms;
-        tmax/=rms;
+      
         pmin=1
-        pmax=self.fitsReader.GetNaxes(2)
+        pmax=1
+        if self.isTwoDim==False:
+            pmax=self.fitsReader.GetNaxes(2)
+            tmin/=rms;
+            tmax/=rms;
         return [tmin,tmax,1,pmax];
 
 
@@ -1667,7 +1707,9 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
     @exportRpc("viewport.gesture")
     def updateGesture(self, event):
-             
+      if self.isTwoDim==True:
+        print("Default 2D interaction");
+        return;       
       if 'StartPinch' in event["type"]:
         self.getApplication().InvokeEvent('StartInteractionEvent')
         renderWindow = self.getView(event['view'])

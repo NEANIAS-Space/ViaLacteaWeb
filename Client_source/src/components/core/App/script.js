@@ -33,22 +33,11 @@ export default {
           value: 'name',
         },
       ],
-      desserts: [
+      images: [
         {
           name: 'image layer 1',
         },
-        {
-          name: 'image layer 2',
-        },
-        {
-          name: 'image layer 3',
-        },
-        {
-          name: 'image layer 4',
-        },
-        {
-          name: 'image layer 5',
-        },
+        
       ],
       dialog: false,
       lfDialog:false,
@@ -106,6 +95,7 @@ export default {
       rotateX: 'CONE_ROTATE',
       is2D: 'CONE_2D',
       out_files:'WS_JSONFILES',
+      fist_image:'WS_IMAGEDESC',
       main_session:'WS_MAIN_SESSION',
     }),
   },
@@ -129,7 +119,9 @@ export default {
       setRotate: 'CONE_SETROTATE',
       set2D:'CONE_SET2D',
       updateFitslocal:'WS_UPDATELOCALFITS',
-      loadImage:'WS_LOADIMAGE',   
+      loadImage:'WS_LOADIMAGE',
+      getInfoImage:'WS_GETINFO',
+      movedLayersRow:'WS_MOVELAYERSROW',
       
      
     }),
@@ -138,9 +130,18 @@ export default {
       //alert(this.toggle_one);
     },
     saveOrder (event) {
-         const movedItem = this.desserts.splice(event.oldIndex, 1)[0];
-         this.desserts.splice(event.newIndex, 0, movedItem);
-         alert ("Moved from "+event.oldIndex+" to "+event.newIndex)
+         const movedItem = this.images.splice(event.oldIndex, 1)[0];
+         this.images.splice(event.newIndex, 0, movedItem);
+         //compute propper indexes
+         var l=this.images.length-1;
+         var oldI=event.oldIndex;
+         var newI=event.newIndex;
+         oldI=l-oldI;
+         newI=l-newI;
+         //alert ("Moved from "+event.oldIndex+" to "+event.newIndex)
+         var param=String(oldI)+','+String(newI)+','+String(newI);
+         console.log (param)
+         this.movedLayersRow(param);
        },
     //TODO: future 3D/2D
     gotoOther(url) {
@@ -187,12 +188,31 @@ export default {
       //
       this.mini = !this.mini;
       this.overlay=false
-      this.loadData();
+      this.loadData().then((result) => {
+             console.log("GetImageData");
+             this.getInfoImage().then((result) => {
+             this.images[0].name=this.fist_image;
+             console.log("First image name ", result);
+             console.log(this.fist_image);
+           });
+           });
 
       //.Cone.loadXMLFITS(res)
       /*fetch("data.json")
         .then(response => response.json())
         .then(data => (this.items = data));*/
+    },
+    addImage(desc, url)
+    {
+      //images.length
+      console.log("Images ")
+      
+      var l=this.images.length
+      var name={"name": desc}
+      this.images.push(name)
+      //this.images.unshift(name)// - adds image on top
+      console.log(this.images.length)
+      this.loadImage(url);
     },
     onLoadToken()
     {
@@ -237,8 +257,9 @@ export default {
       console.log(is3D)
       if (is3D==0) {
         //this.loadDataShort(item.url); //3d loading
-        alert ("2D to be implemented")
-        this.loadImage(item.url);
+        //alert ("2D to be implemented")
+        var desc=item.survey+" "+item.overlap;
+        this.addImage(desc, item.url);
       } else {
         //TODO check data transmission
         this.gotoOther(item.url);
@@ -273,11 +294,17 @@ export default {
       //this.onLoadToken();
       var token=this.$oidc.accessToken;
       this.rtoken=this.$oidc.refreshToken;
-
+      
+      
       //this.callFunction();
       //this.updateToken(token);
-      console.log("begin")
+      //console.log("begin")
       this.connect(token);
+      //.then(() => {
+      //  this.images[0].name=this.fist_image;
+     // });
+     
+      
       //this.mes="2D window";
       setInterval(this.checkToken,1000);
       

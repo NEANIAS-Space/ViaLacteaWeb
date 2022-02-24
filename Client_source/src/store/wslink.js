@@ -19,6 +19,7 @@ export default {
     dc_params: [1,10,1,1060],
     files_params:'[{}]',
     main_session:'',
+    imageDesc:'Test',
     fits_url:'',
     token:'',
   },
@@ -32,6 +33,11 @@ export default {
     WS_JSONFILES(state) {
          return state.files_params;
        },
+   WS_IMAGEDESC(state) {
+        return state.imageDesc;
+      },    
+       
+       
     WS_MAIN_SESSION(state) {
       return state.main_session;
     },
@@ -58,6 +64,9 @@ export default {
     WS_JSONFILES_SET(state, json) {
       state.files_params = json;
     },
+    WS_IMAGEDESC_SET(state,image) {
+           state.imageDesc=image;
+         }, 
     WS_MAIN_SESSION_SET(state, s) {
       state.main_session = s;
       
@@ -84,7 +93,7 @@ export default {
         if (state.client) {
                state.client.getRemote().VLWBase.updateFits(s)
                   .then((result) => {
-                  console.log("Local Fits loaded");
+                  console.log("Url Fits loaded");
                   
                   state.client.getRemote().VLWBase.getDataCubeData().then((result) => {
                     state.dc_params = result;
@@ -139,7 +148,7 @@ export default {
       // Custom setup for development (http:8080 / ws:1234)
       if (location.port === '443') {
         // We suppose that we have dev server and that ParaView/VTK is running on port 1234
-        //config.sessionURL = `ws://${location.hostname}:1234/ws`;
+       // config.sessionURL = `ws://${location.hostname}:1234/ws`;
         config.sessionURL="wss://${location.hostname}:443/proxy?sessionId=${id}&path=ws";
         // config.sessionURL = `ws://192.168.1.49:1234/ws`;
         //  config.sessionURL = `ws://visivo-server.oact.inaf.it:1234/ws`;
@@ -206,7 +215,7 @@ export default {
       // Custom setup for development (http:8080 / ws:1234)
       if (location.port === '443') {
         // We suppose that we have dev server and that ParaView/VTK is running on port 1234
-        //config.sessionURL = `ws://${location.hostname}:1234/ws`;
+       //config.sessionURL = `ws://${location.hostname}:1234/ws`;
         config.sessionURL="wss://${location.hostname}:443/proxy?sessionId=${id}&path=ws";
         // config.sessionURL = `ws://192.168.1.49:1234/ws`;
         //  config.sessionURL = `ws://visivo-server.oact.inaf.it:1234/ws`;
@@ -262,7 +271,7 @@ export default {
         });
     },
     WS_INITIALIZE_SERVER({ state },token) {
-     
+     //for 2D image vis
       if (state.client) {
         state.client.getRemote().VLWBase.getSessionID().then((result) => {
             //set session               
@@ -291,7 +300,8 @@ export default {
             //https://stackoverflow.com/questions/59699813/vuetify-data-table-and-binding-data-coming-from-json-object - get a table from json
             //also https://codepen.io/isogunro/pen/VQRoax
           })
-          })
+         })
+        
                    
        
           //.catch(console.error);
@@ -442,6 +452,29 @@ export default {
       }
     },
     
+    WS_GETINFO({ state }, url) {
+      if (state.client) {
+        
+        state.client.getRemote().VLWBase.getInfo().then((result) => {
+                    state.imageDesc = result;// '[ {"name":"folder", "path":"some path", "children": [ {"name": "2.fits" } ] }, {"name":"Test.fits", "path":"blah a"} ]';// "{\n path: '/home/evgeniya/Documents/GitHub/files', \n name: 'files',\n type: 'directory' \n}";
+                   console.log (result)
+                   return result;
+                 })
+                
+              
+      }
+    },
+    
+    WS_MOVELAYERSROW({ state }, param) {
+      if (state.client) {
+        
+        state.client.getRemote().VLWBase.movedLayersRow(param);
+                
+              
+      }
+    },
+   
+    
     WS_UPDATE_XMLFITS({ state }, res) {
       if (state.client) {
         // console.log("Start loading fitx with parameters2 " + res);
@@ -475,7 +508,16 @@ export default {
                //   return alert("Done");
               }
             
-          );
+          )
+          //.then(
+         // function() {
+         //  state.client.getRemote().VLWBase.getInfo().then((result) => {
+         //    state.imageDesc = result;// '[ {"name":"folder", "path":"some path", "children": [ {"name": "2.fits" } ] }, {"name":"Test.fits", "path":"blah a"} ]';// "{\n path: '/home/evgeniya/Documents/GitHub/files', \n name: 'files',\n type: 'directory' \n}";
+          //   return state.imageDesc;
+        //   })
+        //   })
+
+
         //
       }
     },

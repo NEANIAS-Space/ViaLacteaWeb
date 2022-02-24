@@ -6,6 +6,7 @@ export default function createMethods(session) {
     logOut:(rtoken) => session.call("vtk.initialize.logout", [rtoken]),
     loadURL: () => session.call('vtk.cone.url', []),
     resetCamera: () => session.call('vtk.camera.reset', []),
+    getInfo: () => session.call('vtk.cone.getinfo', []),
     getSessionID: () => session.call('vtk.getsession', []),
     updateResolution: (resolution) =>
       session.call('vtk.cone.resolution.update', [resolution]),
@@ -29,7 +30,8 @@ export default function createMethods(session) {
       
     loadXMLFITS: (res) =>
                  session.call('vtk.cone.urlfits', [res]),
-                 
+    movedLayersRow: (res) =>
+                 session.call('vtk.cone.movedlayersrow', [res]),            
     getDataCubeData:() => session.call('vtk.cone.loadcubedata', []),
     
     setToken: (t) =>
