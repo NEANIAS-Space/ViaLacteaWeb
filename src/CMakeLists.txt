@@ -26,6 +26,8 @@ set(LIB_SPECIAL
     xml_procs.cpp
     tinyxml2.cpp
     astroutils.cpp
+    luthelper.cpp
+    color.cpp
     libwcs/fitsfile.c
     libwcs/imgetwcs.c
     libwcs/wcs.c

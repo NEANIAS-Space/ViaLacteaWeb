@@ -387,7 +387,83 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.resetCamera();  
 
         return -1; #self.resetCamera()
+
+
+
         
+    @exportRpc("vtk.cone.changeopacity")
+    def changeOpacity(self,res):
+        print ("Opacity Change")  
+        p=res.split(",");
+        objN=int(p[0])
+        opacity=float(p[1])
+        
+        print("object at {:d}, opacity {:d}".format(objN, opacity));
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        slice.SetOpacity(opacity/ 100.0);
+        self.renderWindow.Render()
+        
+    @exportRpc("vtk.cone.changevisibility")
+    def changeVisibility(self,res):
+        print ("Visitility Change")  
+        p=res.split(",");
+        objN=int(p[0])
+        status=bool(p[1])
+        
+        print("object at {:d}, visibility {:d}".format(objN, status));
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        if status:
+          slice.VisibilityOn();
+        else:
+          slice.VisibilityOff();
+          
+        self.renderWindow.Render()            
+        
+    @exportRpc("vtk.cone.changepalette")
+    def changeFitsScale(self,res):
+        #num in imageStack, palette, scale
+        
+        print ("Rescaling image")  
+        p=res.split(",");
+        objN=int(p[0])
+        palete=str(p[1])
+        myscale =str(p[2])
+        #int sourceStart, int sourceEnd,  int destinationRow
+        print("object at {:d}, palette {:s}, scale {:s}".format(objN, palete, myscale));
+        
+        #vtkImageSlice
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        #map=slice.GetMapper();
+        #input=map.GetInput();
+        
+        #min and max of fits should be saved before
+        #min = imgLayerList.at(pos)->getFits()->GetMin();
+        #if (min < 0)
+        #min = 0;
+        #float max = imgLayerList.at(pos)->getFits()->GetMax();
+        
+        lut = vtk.vtkLookupTable();
+        if myscale == "Linear":
+           lut.SetScaleToLinear();
+        else:
+           lut.SetScaleToLog10();
+        
+        #SelectLookTable(palette.c_str(), lut);
+        
+        colors = vtk.vtkImageMapToColors();
+        # We have to store both list of images and imageStack
+        colors.SetInputData(input); #get from stack
+        colors.SetLookupTable(lut);
+        colors.Update();
+
+        imageSliceMapperLutModified =vtk.vtkImageSliceMapper();
+        imageSliceMapperLutModified.SetInputData(colors.GetOutput());
+        
+        slice.SetMapper(imageSliceMapperLutModified);
+        print("Lut was updated")
+
+        
+  
     def init2DPipe(self):
         
         self.setFits2D()
@@ -422,11 +498,18 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/fce9cd964fa311afdf27353f0b6bc21918e5e603/Code/src/vtkwindow_new.cpp#L1178
         renderer3=self.Ren3;
         
-        #rMin=self.fitsReader.GetRangeSliceMin(0)
-        #rMax=self.fitsReader.GetRangeSliceMax(0)
-        #print(rMin,rMax)
+        min=self.fitsReader.GetMin();
+        max=self.fitsReader.GetMax();
+        delta=0;
+        
+        if min<=0:
+          delta=1-min;
+          min=1
+          max=max+delta;
+          
         resultScale = vtk.vtkImageShiftScale();
-        resultScale.SetOutputScalarTypeToUnsignedChar();
+        resultScale.SetShift(delta)
+        resultScale.SetOutputScalarTypeToFloat();
         resultScale.SetInputData( self.fitsReader.GetOutput() );
 
         resultScale.Update();
@@ -436,18 +519,9 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
         
         
-        lut = vtk.vtkLookupTable();
-        #lut.SetScaleToLog10()
-        #leave linear as default
-        min=self.fitsReader.GetMin()
-        #if min <= 0 :
-        #    min=1;
-        lut.SetTableRange( min, self.fitsReader.GetMax() );
- 
-        #lut.SetHueRange (0., 0.);
-        #lut.SetSaturationRange (0., 0.);
-        #lut.SetValueRange(0., 1.);
-        #lut.SetScaleToLog10()
+        lut = self.fitsReader.CreateLookTable("Gray");
+        lut.SetTableRange( min, max );
+        lut.SetScaleToLog10()
         
         lut.Build()
         print("Lut was build")
@@ -455,8 +529,13 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #imageObject->setLutScale("Log");
         #imageObject->setLutType("Gray");
         
+        fits=resultScale.GetOutput();
+        self.fits_list=[fits];
+        self.min_max=[[min,max,delta]]
+        print("Fits list")
+        
         colors =  vtk.vtkImageMapToColors();
-        colors.SetInputData(self.fitsReader.GetOutput());
+        colors.SetInputData(resultScale.GetOutput());
         colors.SetLookupTable(lut);
         colors.Update();
         
@@ -510,13 +589,23 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #curl_easy_perform() failed: Couldn't connect to server
 
     
-
+   
         if sourceStart>destinationRow:
              #down
- 
-             for i in range(sourceStart,destinationRow-1,-1):
+             print("Move down ")
+             sliceB=self.imageStack.GetImages().GetItemAsObject(sourceStart);
+             my_sliceB = vtk.vtkImageSlice().SafeDownCast(sliceB)
+             my_sliceB.Modified()
+             
+             for i in range(sourceStart-1,destinationRow-1,-1):
+                
                 slice=self.imageStack.GetImages().GetItemAsObject(i);
-                slice.GetProperty().SetLayerNumber(i+1)
+                my_slice = vtk.vtkImageSlice().SafeDownCast(slice)
+                my_slice.Modified()
+                print(my_slice.GetProperty().GetLayerNumber())
+                print(i+1)
+                my_slice.GetProperty().SetLayerNumber(i+1)
+                my_slice.Modified()
                 #base_image.GetProperty().SetLayerNumber(0)
                 #top_image.GetProperty().SetLayerNumber(1)
                 #stack.SetActiveLayer(0)
@@ -524,26 +613,39 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                 #vtkImageSlice::SafeDownCast(imageStack->GetImages()->GetItemAsObject(i))->GetProperty()->SetLayerNumber(i+1);
                 #imgLayerList.swapItemsAt(i,i+1);
  
-             sliceB=self.imageStack.GetImages().GetItemAsObject(sourceStart);
-             sliceB.GetProperty().SetLayerNumber(destinationRow)
+             
+             print(my_sliceB.GetProperty().GetLayerNumber())
+             print(destinationRow)
+             my_sliceB.GetProperty().SetLayerNumber(destinationRow)
+             my_sliceB.Modified()
              #vtkImageSlice::SafeDownCast(imageStack->GetImages()->GetItemAsObject(sourceStart))->GetProperty()->SetLayerNumber(destinationRow);
 
         else:
              #up
-
-             for i in range(sourceStart+1,destinationRow,1):
+             print("Move up")
+             for i in range(sourceStart+1,destinationRow+1,1):
+                print(i)
                 slice=self.imageStack.GetImages().GetItemAsObject(i);
-                slice.GetProperty().SetLayerNumber(i-1)
+                my_slice = vtk.vtkImageSlice().SafeDownCast(slice)
+                my_slice.Modified()
+                my_slice.GetProperty().SetLayerNumber(i-1)
+                my_slice.Modified()
+                
                 #vtkImageSlice::SafeDownCast(imageStack->GetImages()->GetItemAsObject(i))->GetProperty()->SetLayerNumber(i-1);
                 #imgLayerList.swapItemsAt(i,i-1);
 
              sliceB=self.imageStack.GetImages().GetItemAsObject(sourceStart);
-             sliceB.GetProperty().SetLayerNumber(destinationRow-1)
+             my_sliceB = vtk.vtkImageSlice().SafeDownCast(sliceB)
+             my_sliceB.Modified()
+             my_sliceB.GetProperty().SetLayerNumber(destinationRow)
+             my_sliceB.Modified()
+             print(destinationRow)
+            
              #vtkImageSlice::SafeDownCast(imageStack->GetImages()->GetItemAsObject(sourceStart))->GetProperty()->SetLayerNumber(destinationRow-1);
-        #self.Ren3.ResetCamera()
         self.renderWindow.Render()
         self.getApplication().InvalidateCache(self.renderWindow)
         self.getApplication().InvokeEvent('UpdateEvent')
+    
 
 
 
@@ -561,23 +663,38 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
     @exportRpc("vtk.cone.addlayerimage")   
     def addLayerImage(self):
         print ("Adding layer image")
+        print ("Adding layer image")
+        min=self.fitsReader.GetMin();
+        max=self.fitsReader.GetMax();
+        delta=0;
+        
+        if min<=0:
+          delta=1-min;
+          min=1
+          max=max+delta;
+          
         resultScale = vtk.vtkImageShiftScale();
-        resultScale.SetOutputScalarTypeToUnsignedChar();
+        resultScale.SetShift(delta)
+        resultScale.SetOutputScalarTypeToFloat();
         resultScale.SetInputData( self.fitsReader.GetOutput() )
         resultScale.Update();
 
-        lut = vtk.vtkLookupTable();
-
-        min=self.fitsReader.GetMin();
-        max= self.fitsReader.GetMax();
-        if min<=0:
-           min=0;#1;
-
+ 
+        lut = self.fitsReader.CreateLookTable("Gray");
+       
     
 
-        lut.SetTableRange(  min , max );
+        lut.SetTableRange(min,max);
+       
 
-        #self.lut.SetScaleToLog10();
+        lut.SetScaleToLog10();
+        print("Lut is set")
+        self.fits_list.append(resultScale.GetOutput())
+        self.min_max.append([min,max,delta])
+        print("Fits is updated")
+        
+        #SelectLookTable("Gray",lut);
+
 
         #SelectLookTable("Gray",lut);
         
@@ -596,7 +713,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.fitsReader.GetOutput().SetOrigin( coord[0],coord[1],0);
         
         colors =  vtk.vtkImageMapToColors();
-        colors.SetInputData(self.fitsReader.GetOutput());
+        colors.SetInputData(resultScale.GetOutput());
         colors.SetLookupTable(lut);
         colors.Update();
 
@@ -619,7 +736,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
         if x1!=coord[0]:
     
-           m = fabs((coord[1]-y1)/(coord[0]-x1));
+           m = math.fabs((coord[1]-y1)/(coord[0]-x1));
            angle =1*( 90 - math.atan(m)*180/math.pi);
         
         
@@ -1002,34 +1119,117 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #self.setFits();
         
         self.Set2DPipeWindowActors()
-        #self.SetLeftWindowActors();
-        #self.SetRightWindowActors();
-        #print("Done") 
-      
-        #self.Ren1.ResetCamera()
-        #self.Ren2.ResetCamera()
-        
-        #Set coordinates for reset camera 
-        # all actors where added to renderer for first pipeline above
-        #self.cam_init_pos=self.Ren1.GetActiveCamera( ).GetPosition();
-        #self.cam_init_foc=self.Ren1.GetActiveCamera( ).GetFocalPoint();
-        
-       
-        #print(self.cam_init_pos)
-        
-        #getInteractorStyle info to check
-       
-        #print("Interactor type final check") 
-        #name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
-        #print(name)
-        
-     
         
         
         self.renderWindow.Render()
         
         
         self.fitsWasRead=True;
+
+
+    @exportRpc("vtk.cone.changepalette")
+    def changePalette(self,res):
+        #num in imageStack, palette, scale
+        
+        print ("Rescaling image")  
+        p=res.split(",");
+        objN=int(p[0])
+        objId=int(p[1])
+        palete=str(p[2])
+        myscale =str(p[3])
+        #int sourceStart, int sourceEnd,  int destinationRow
+        print("object at {:d}, num {:d}, palette {:s}, scale {:s}".format(objN, objId, palete, myscale));
+        
+        #vtkImageSlice
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        my_slice = vtk.vtkImageSlice().SafeDownCast(slice)
+        my_slice.Modified()
+        #map=slice.GetMapper();
+        input=self.fits_list[objId]
+        m_r=self.min_max[objId];#.append([min,max,delta])
+        
+        #min and max of fits should be saved before
+        #min = imgLayerList.at(pos)->getFits()->GetMin();
+        #if (min < 0)
+        #min = 0;
+        #float max = imgLayerList.at(pos)->getFits()->GetMax();
+        
+ 
+        lut = self.fitsReader.CreateLookTable(palete);
+        lut.SetTableRange(m_r[0],m_r[1]);
+       
+        if myscale == "Linear":
+           lut.SetScaleToLinear();
+        else:
+           lut.SetScaleToLog10();
+        
+        print("Lut updated")
+        #SelectLookTable(palette.c_str(), lut);
+        
+        colors = vtk.vtkImageMapToColors();
+        # We have to store both list of images and imageStack
+        colors.SetInputData(input); #get from stack
+        colors.SetLookupTable(lut);
+        colors.Update();
+        
+        print("Fits updated")
+    
+        imageSliceMapperLutModified =vtk.vtkImageSliceMapper();
+        imageSliceMapperLutModified.SetInputData(colors.GetOutput());
+        
+        my_slice.SetMapper(imageSliceMapperLutModified);
+        my_slice.Modified()
+        print("Palette applied")
+        self.renderWindow.Render()
+        self.getApplication().InvalidateCache(self.renderWindow)
+        self.getApplication().InvokeEvent('UpdateEvent')  
+
+
+                           
+    
+    @exportRpc("vtk.cone.changeopacity")
+    def changeOpacity(self,res):
+        print ("Opacity Change2")  
+        p=res.split(",");
+        objN=int(p[0])
+        opacity=float(p[1])
+        
+        print("object at {:d},".format(objN));
+        print(opacity)
+        
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        my_slice = vtk.vtkImageSlice().SafeDownCast(slice)
+        #my_slice.ShallowCopy(slice)
+        my_slice.Modified()
+        my_slice.GetProperty().SetOpacity(opacity/ 100.0);
+        my_slice.Modified()
+        self.renderWindow.Render()
+        self.getApplication().InvalidateCache(self.renderWindow)
+        self.getApplication().InvokeEvent('UpdateEvent')           
+        
+        
+    @exportRpc("vtk.cone.changevisibility")
+    def changeVisibility(self,res):
+        print ("Visitility Change")  
+        p=res.split(",");
+        objN=int(p[0]) #hack - change later
+        status=(p[1])
+        
+        print("object at {:d}, visibility {:s}".format(objN, status));
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        my_slice = vtk.vtkImageSlice().SafeDownCast(slice)
+        #my_slice.ShallowCopy(slice)
+        my_slice.Modified()
+        #help(my_slice)
+        if status=="true":
+          
+          my_slice.VisibilityOn();
+        else:
+          my_slice.VisibilityOff();
+          
+        self.renderWindow.Render() 
+        self.getApplication().InvalidateCache(self.renderWindow)
+        self.getApplication().InvokeEvent('UpdateEvent')  
 
  
     @exportRpc("vtk.cone.load.image")
@@ -1496,6 +1696,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                     #print("Outside screen")
                  if self.x1>-1000000 and self.y1>-1000000 :  #dist>0.0: Second point
                      #self.getApplication().InvokeEvent('StartInteractionEvent')
+                   if self.isTwoDim==False:
+                     
                      if x<0.5:
                  
                         
@@ -1571,42 +1773,159 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                              newWindow = 0.01;
                         self.viewer.SetColorWindow(newWindow)
                         self.viewer.SetColorLevel(newLevel);
-                        #self.viewer.Modified()
-                        #self.viewer.Render()
-                        #self.WindowLevelInitial[0]=newWindow;
-                        #self.WindowLevelInitial[1]=newLevel;
-                        
-                        #self.Ren2.Render()
-                        #self.renderWindow.GetInteractor().Render();
-                        #print(newWindow,newLevel);
-
-
-                        
-                     
-                     
-                     #self.renderWindow.Render()
+                      
                      self.renderWindow.Modified()
-                     #print(angle)
-                     #self.getApplication().InvokeEvent('EndInteractionEvent')
+
+
+                        
+                   else: #self.isTwoDim:   
+                     #print("2D window scale")
+                     size=self.renderWindow.GetSize();
+                     delta_y = self.winScale*80.0 / size[1];
+                     delta_x = self.winScale*160.0 / size[0];
+                     window = self.imageStack.GetProperty().GetColorWindow()
+                     level = self.imageStack.GetProperty().GetColorLevel()
+                     dx=(self.x1-x)*delta_x;
+                     dy=(self.y1-y)*delta_y;
+                      
+                     d_w=0.01
+                     if window < 0:
+                         d_w=-0.01
+                     d_l=0.01
+                     if level < 0:
+                         d_l=-0.01
+
+                     if math.fabs(window) > 0.01:
+                         dx = dx * window;
+                     else:
+                         dx = dx * d_w
+                     if math.fabs(level) > 0.01:
+                         dy = dy * level;
+                     else:
+                         dy = dy * d_l;
+                        
+
+                     if window < 0.0:
+                         dx = -1 * dx;
+                     if level < 0.0:
+                         dy = -1 * dy;
+                     newWindow = dx + window;
+                     newLevel = level - dy;
+
+                     if newWindow < 0.01:
+                          newWindow = 0.01;
+                     self.imageStack.GetProperty().SetColorWindow(newWindow)
+                     self.imageStack.GetProperty().SetColorLevel(newLevel);
+                      
+
+                                          
+                     self.renderWindow.Modified()
+                     
                  
                  else:
                     self.getApplication().InvokeEvent('StartInteractionEvent')
                     #print("Start")
                  self.x1=x
                  self.y1=y
+           
              if event['shiftKey']==1:
                  #vtkInteractorStyleImage
                  #https://github.com/Kitware/VTK/blob/master/Interaction/Style/vtkInteractorStyleImage.cxx
-                 print("other")
+                 
+                 angle  = 0;
+                 x=event['x']
+                 y=event['y']
+                 #print("Got rotate call")
+                 #print(dist)
+                 #check if outside of port
+                 if x-0.01<=0.0 or y-0.01<=0.0 or x+0.01>1.0 or y+0.01>1.0:
+                    self.getApplication().InvokeEvent('EndInteractionEvent')
+                    self.x1=-1000000
+                    self.y1=-1000000   
+                    #print("Outside screen")
+                 if self.x1>-1000000 and self.y1>-1000000 :  #dist>0.0: Second point
+                     #self.getApplication().InvokeEvent('StartInteractionEvent')
+                     print("pan")
+                     camera = self.renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera()
+                     viewFocus=camera.GetFocalPoint();
+                     print(viewFocus[0],viewFocus[1],viewFocus[2])
+                     viewFocus=self.ComputeWorldToDisplay(viewFocus[0], viewFocus[1], viewFocus[2]);
+                     focalDepth = viewFocus[2];
+                     print(viewFocus[0],viewFocus[1],viewFocus[2])
+                     newPickPoint=self.ComputeDisplayToWorld(x,y,focalDepth);
+                     print(newPickPoint[0],newPickPoint[1],newPickPoint[2])
+
+                     # Has to recalc old mouse point since the viewport has moved,
+                     # so can't move it outside the loop
+
+                     oldPickPoint=self.ComputeDisplayToWorld(self.x1,self.y1,focalDepth)
+                     
+                     #Camera motion is reversed
+                     
+                        
+                     motionVector=[0,0,0]
+                     motionVector[0] = self.winScale*(oldPickPoint[0] - newPickPoint[0]);
+                     motionVector[1] = self.winScale*(oldPickPoint[1] - newPickPoint[1]);
+                     motionVector[2] = self.winScale*(oldPickPoint[2] - newPickPoint[2]);
+                     print("Motion ",motionVector[0],motionVector[1],motionVector[2])
+
+                     viewFocus=camera.GetFocalPoint();
+                     viewPoint=camera.GetPosition();
+                     camera.SetFocalPoint(motionVector[0] + viewFocus[0], motionVector[1] + viewFocus[1], motionVector[2] + viewFocus[2]);
+
+                     camera.SetPosition(motionVector[0] + viewPoint[0], motionVector[1] + viewPoint[1], motionVector[2] + viewPoint[2]);
+                     self.renderWindow.Modified()
+                     self.getApplication().InvalidateCache(self.renderWindow)
+                     self.getApplication().InvokeEvent('UpdateEvent')
+                     print("Panning done")
+                 else:
+                    self.getApplication().InvokeEvent('StartInteractionEvent')
+                    #print("Start")
+                 self.x1=x
+                 self.y1=y
+
+         
+
          
          if event['action']=='up': #end of interaction
              self.x1=-1000000
              self.y1=-1000000   
              self.getApplication().InvokeEvent('EndInteractionEvent') 
              #print("End") 
+
+
+    def ComputeWorldToDisplay(self,x,y,z):
+       renderer=self.renderWindow.GetRenderers().GetFirstRenderer()
+       renderer.SetWorldPoint(x, y, z, 1.0);
+       renderer.WorldToDisplay();
+       displayPt=renderer.GetDisplayPoint();
+       return displayPt;
+       
+    def ComputeDisplayToWorld(self,x, y, z):
+       renderer=self.renderWindow.GetRenderers().GetFirstRenderer()
+       renderer.SetDisplayPoint(x, y, z);
+       renderer.DisplayToWorld();
+     
+       worldPt=renderer.GetWorldPoint();
+       pt=[0.0,0.0,0.0,0.0]
+       if worldPt[3]!=0:
+         
+          pt[0]= float(worldPt[0])/float(worldPt[3])
+         
+          pt[1]= worldPt[1]/worldPt[3]
+          pt[2]= worldPt[2]/worldPt[3]
+          
+          pt[3] = 1.0;
+        
+       return pt;
+       
+    @exportRpc("vtk.cone.changeselected")
+    def changeSelected(self, res):
+       print("Active layer ",res);
+       self.imageStack.SetActiveLayer(int(res));
+       self.renderWindow.Render();                 
                  
-                 
-             
+                
            
     @exportRpc("vtk.cone.camview.update")
     def updateCamView(self, v):

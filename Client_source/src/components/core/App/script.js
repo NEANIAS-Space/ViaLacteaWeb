@@ -33,12 +33,37 @@ export default {
           value: 'name',
         },
       ],
+      palettes: ["Default","Default Step","EField","Glow","Gray","MinMax","PhysicsContour","PureRed","PureGreen","PureBlue","Run1","Run2","Sar","Temperature","TenStep","VolRenGlow","VolRenRGB","VolRenRGB","VolRenTwoLev","AllYellow","AllCyane","AllViolet","AllWhite","AllBlack","AllRed","AllGreen","AllBlu"
+      ],
+      
       images: [
         {
-          name: 'image layer 1',
-        },
+           name: 'Make a query to load image',
+            selected:true,
+            visibility: true,
+            opacity: 100,
+            palette: "Gray",
+            scale:1,
+            id:0,
+            
+         },
         
       ],
+      imOpacity:100,
+      imPalette:"Gray",
+      paletteScaleLog:false,
+      editedIndex: -1,
+      editedItem:[
+      {
+        name: 'image layer 1',
+        visibility: true,
+        selected: false,
+        opacity: 100,
+        palette: "Gray",
+        scale:1,
+        id:0,
+      },],
+      formTitle:"Default title",
       dialog: false,
       lfDialog:false,
       mes:"Loading",
@@ -97,6 +122,7 @@ export default {
       out_files:'WS_JSONFILES',
       fist_image:'WS_IMAGEDESC',
       main_session:'WS_MAIN_SESSION',
+     
     }),
   },
   methods: {
@@ -122,9 +148,134 @@ export default {
       loadImage:'WS_LOADIMAGE',
       getInfoImage:'WS_GETINFO',
       movedLayersRow:'WS_MOVELAYERSROW',
+      changeOpacity:'WS_CHANGEOPACITY',
+      changeVisibility:'WS_CHANGEVISIBILITY',
+      changePalette:'WS_CHANGEPALETTE',
+      changeSelection:'WS_CHANGESELECTED',
       
      
     }),
+    addTest()
+    {
+      var l=this.images.length-1;
+      this.addImage("Test image"+String(l), "test");
+    },
+    setOpacity()
+       {
+         
+         //var id=this.images[this.editedIndex].id
+         var res=String(this.editedIndex)+","+String(this.imOpacity)
+         console.log("Opacity for ", res )
+         this.images[this.editedIndex].opacity=this.imOpacity;
+         console.log(this.editedIndex," with opacity ", this.images[this.editedIndex].opacity)
+         this.changeOpacity(res)
+       },
+       setPaletteScale()
+       { //this.paletteScaleLog=!this.paletteScaleLog;
+         console.log(this.paletteScaleLog);
+         this.images[this.editedIndex].scale=this.paletteScaleLog;
+         this.setPalette()
+       },
+     setPalette()
+        {
+          //var l=this.images.length-1;
+          var id=this.images[this.editedIndex].id
+          var sc=String("Log")
+          if (this.paletteScaleLog){
+            sc=String("Linear")
+          }
+          var res=String(this.editedIndex)+","+String(id)+","+String(this.imPalette)+","+sc
+          //console.log("Palette for ", res )
+          this.images[this.editedIndex].palette=this.imPalette;
+          this.changePalette(res)
+        },
+      setVisibilityOn(item)
+               {
+      this.editedIndex = this.images.indexOf(item)
+      this.editedItem = Object.assign({}, item)
+      
+      //var id=this.images[this.editedIndex].id
+     
+      var res=String(this.editedIndex)+",true"
+      console.log("Visibility for ", res )
+      this.images[this.editedIndex].visibility=true;
+      this.changeVisibility(res)
+               },
+  setVisibilityOff(item)
+  {
+    this.editedIndex = this.images.indexOf(item)
+    this.editedItem = Object.assign({}, item)
+    //var id=item.id;
+    
+    var res=String(this.editedIndex)+",false"
+    console.log(" Visibility for ", res )
+    this.images[this.editedIndex].visibility=false;
+    this.changeVisibility(res)
+  },
+    
+    
+    
+        setSelectionOn(item)
+                 {
+        this.editedIndex = this.images.indexOf(item)
+        this.editedItem = Object.assign({}, item)
+        
+        //var id=this.images[this.editedIndex].id
+       
+        var res=String(this.editedIndex)+",true"
+        console.log("Selection for ", res )
+        for (let i=0;i<this.images.length;i++)
+        {
+          this.images[i].selected=false;
+        }
+        this.images[this.editedIndex].selected=true;
+        this.changeSelection(this.editedIndex)
+                 },
+
+    
+    
+    editItem (item) {
+      this.formTitle=item.name;
+      this.editedIndex = this.images.indexOf(item)
+      this.editedItem = Object.assign({}, item)
+      this.imOpacity=this.images[this.editedIndex].opacity;
+      this.imPalette=this.images[this.editedIndex].palette;
+      this.paletteScaleLog=this.images[this.editedIndex].scale;
+      console.log(this.paletteScaleLog)
+      this.dialog = true
+    },
+    
+    deleteItem (item) {
+      this.editedIndex = this.images.indexOf(item)
+      this.editedItem = Object.assign({}, item)
+      this.dialogDelete = true
+    },
+    
+    deleteItemConfirm () {
+      this.images.splice(this.editedIndex, 1)
+      //Add remote call to delete image
+      this.closeDelete()
+    },
+    
+    close () {
+      this.dialog = false
+      this.$nextTick(() => {
+        
+        this.editedItem = Object.assign({}, this.defaultItem)
+        this.editedIndex = -1
+      })
+      this.editedItem = Object.assign({}, this.defaultItem)
+      this.editedIndex = -1
+    },
+    
+    closeDelete () {
+      this.dialogDelete = false
+      this.$nextTick(() => {
+        this.editedItem = Object.assign({}, this.defaultItem)
+        this.editedIndex = -1
+      })
+    },
+    
     onSetCamera() {
       //this.dialog=true;
       //alert(this.toggle_one);
@@ -134,10 +285,10 @@ export default {
          this.images.splice(event.newIndex, 0, movedItem);
          //compute propper indexes
          var l=this.images.length-1;
-         var oldI=event.oldIndex;
-         var newI=event.newIndex;
-         oldI=l-oldI;
-         newI=l-newI;
+         var oldI=this.images[event.oldIndex].id;
+         var newI=this.images[event.newIndex].id;
+         oldI=event.oldIndex;//l-oldI;
+         newI=event.newIndex;//l-newI;
          //alert ("Moved from "+event.oldIndex+" to "+event.newIndex)
          var param=String(oldI)+','+String(newI)+','+String(newI);
          console.log (param)
@@ -190,25 +341,34 @@ export default {
       this.overlay=false
       this.loadData().then((result) => {
              console.log("GetImageData");
-             this.getInfoImage().then((result) => {
-             this.images[0].name=this.fist_image;
-             console.log("First image name ", result);
-             console.log(this.fist_image);
+             
+             setTimeout(this.setFirstName,1500);
+          
            });
-           });
-
+    
       //.Cone.loadXMLFITS(res)
       /*fetch("data.json")
         .then(response => response.json())
         .then(data => (this.items = data));*/
     },
+    setFirstName() {
+        //
+       if(this.fist_image==''){
+         setTimeout(this.setFirstName,500);
+       } else{
+               this.images[0].name=this.fist_image;
+               console.log("Setting image");
+               console.log(this.fist_image);
+             }
+           },
+   
     addImage(desc, url)
     {
       //images.length
       console.log("Images ")
       
       var l=this.images.length
-      var name={"name": desc}
+      var name={"name": desc, "visibility": true, "selected":false,"opacity":100, "palette": "Gray", "scale": false, "id":l}
       this.images.push(name)
       //this.images.unshift(name)// - adds image on top
       console.log(this.images.length)

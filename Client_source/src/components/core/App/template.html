@@ -338,30 +338,136 @@ v-model="drawer"
           absolute
           permanent
           right
+          width="350px"
         >
           <v-list-item >
           
                    <v-list-item-content>
                      <v-list-item-title>Layer stack</v-list-item-title>
+                     
+               
+                     
                      <v-data-table
                        :headers="headers2"
                        :items="images"
                        v-sortable-data-table
                        @sorted="saveOrder"
-                       item-key="name"
-                     ></v-data-table>
+                       item-key="name">
+                         <template v-slot:top>
+                       
+                       
+                       
+                       <v-dialog
+                         v-model="dialog"
+                         max-width="500px"
+                       >
+                        
+                         <v-card>
+                           <v-card-title>
+                             <span class="text-h5">Layer settings</span>
+                              
+                           </v-card-title>
+                           <span class="text-h7">{{ editedItem.name }}</span>
+                           <v-card-text>
+                           <v-container>
+                             <v-row>
+                               <v-col
+                                 
+                               >
+                              
+                               
+                             <v-slider
+                             thumb-label="always"
+                             v-model="imOpacity"
+                             label="Opacity"
+                             hide-details
+                             :value="editedItem.opacity"
+                             min="0"
+                             max="100"
+                             step="5"
+                             @input="setOpacity" 
+                             
+                             >
+                             
+                             
+                               </v-slider>
+                               <v-switch
+                                label="Scale Linear"
+                                 v-model="paletteScaleLog"
+                                 @click="setPaletteScale"
+                               />
+                               
+                               <v-select
+                                 :items="palettes"
+                                 v-model="imPalette"
+                                 label="Palettes"
+                                 @input="setPalette" 
+                               ></v-select>
+                               
+                               
+                               </v-col>
+                                       </v-row>
+                                     </v-container>
+                                   </v-card-text>
+                               
+                                   <v-card-actions>
+                                     <v-spacer></v-spacer>
+                                     <v-btn
+                                       color="blue darken-1"
+                                       text
+                                       @click="close"
+                                     >
+                                       Close
+                                     </v-btn>
+                                     
+                                   </v-card-actions>
+                                 </v-card>
+                               </v-dialog>
+                           </template>
+                       
+                      <template v-slot:item.name="{ item }">
+                        
+
+                      <v-icon v-if="item.selected"
+                       color="blue darken-2"
+                       >
+                       mdi-select
+                       </v-icon>
+                       <v-icon v-if="!item.selected"
+                       @click="setSelectionOn(item)"
+                       >
+                                              mdi-select-off
+                                              </v-icon>
+
+
+
+                        <v-icon
+                          small
+                         @click="editItem(item)"
+                       
+                        >
+                          mdi-pencil
+                        </v-icon>
+                        <v-icon v-if="item.visibility"
+                        @click="setVisibilityOff(item)"
+                        >
+                        mdi-eye
+                        </v-icon>
+                        <v-icon v-if="!item.visibility"
+                        @click="setVisibilityOn(item)"
+                        >
+                                               mdi-eye-off
+                                               </v-icon>
+                        {{item.name}}
+                       
+                      </template>
+                           
+                     </v-data-table>
                     
       
                    </v-list-item-content>
                  </v-list-item>
-                 <v-list-item >
-                 
-                          <v-list-item-content>
-                            <v-list-item-title>Layer settings</v-list-item-title>
-                           
-                 
-                          </v-list-item-content>
-                        </v-list-item>
+                
           </v-navigation-drawer>
       </v-card>
       <remote-rendering-view :client="client" />

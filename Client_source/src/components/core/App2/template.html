@@ -187,13 +187,7 @@
   <v-main :class="$style.appContent">
 
     <div style="position: relative; width: 100%; height: 100%" v-on:click="overlay=false">
-     <v-overlay :absolute="absolute" :opacity="opacity" :value="overlay"  >
-        Please, input Galactic Coordinates on the left panel
-        <v-icon >
-          mdi-database-search
-        </v-icon>
-
-     </v-overlay>
+     
       <v-overlay :absolute="absolute" :opacity="opacity" :value="busy"  >
          <v-container >
                  <v-layout row justify-center align-center>

@@ -82,6 +82,7 @@ export default {
       out_files:'WS_JSONFILES',
       main_session:'WS_MAIN_SESSION',
       
+      
     }),
   },
   methods: {

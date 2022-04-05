@@ -10,6 +10,7 @@
 #include "vtkAlgorithm.h"
 #include "vtkFloatArray.h"
 #include "vtkStructuredPoints.h"
+#include "luthelper.h"
 
 extern "C" {
 #include "fitsio.h"
@@ -24,6 +25,14 @@ public:
     static vtkFitsReader* New();
     vtkFitsReader();
     ~vtkFitsReader();
+
+     //For Lut access
+    vtkLookupTable * CreateLookTable(std::string palette){
+        vtkLookupTable *lut=vtkLookupTable::New();
+        //std::cout<< "Selecting table"<<std::endl;
+        lut::SelectLookTable(palette,lut);
+        return lut;
+    };
 
     //For downloading and parcing files
 

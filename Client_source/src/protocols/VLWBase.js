@@ -17,6 +17,14 @@ export default function createMethods(session) {
     
     updateFits: (url) =>
       session.call('vtk.cone.fits.update', [url]),
+    changeVisibility: (res) =>
+    session.call('vtk.cone.changevisibility', [res]),
+    changeSelected: (res) =>
+    session.call('vtk.cone.changeselected', [res]),
+    changeOpacity: (res) =>
+    session.call('vtk.cone.changeopacity', [res]),
+    changePalette: (res) =>
+    session.call('vtk.cone.changepalette', [res]),
     updateFitslocal: (fits) =>
     session.call('vtk.cone.fits.localupdate', [fits]),
     updateCamView: (v) =>

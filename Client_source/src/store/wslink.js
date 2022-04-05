@@ -19,7 +19,7 @@ export default {
     dc_params: [1,10,1,1060],
     files_params:'[{}]',
     main_session:'',
-    imageDesc:'Test',
+    imageDesc:'',
     fits_url:'',
     token:'',
   },
@@ -93,15 +93,18 @@ export default {
         if (state.client) {
                state.client.getRemote().VLWBase.updateFits(s)
                   .then((result) => {
-                  console.log("Url Fits loaded");
-                  
+                  //console.log("Url Fits loaded");
+                  if(!result) return alert("No datacube in VLKB database. Please choose another one");
+                                   else{
                   state.client.getRemote().VLWBase.getDataCubeData().then((result) => {
                     state.dc_params = result;
                     //alert(state.dc_params[3]);
                    //console.log("local file params", state.dc_params);
                     return state.dc_params;
+                  
                     
                   })
+                }
                   })
              }
              else {console.error("Client still not set")
@@ -148,7 +151,7 @@ export default {
       // Custom setup for development (http:8080 / ws:1234)
       if (location.port === '443') {
         // We suppose that we have dev server and that ParaView/VTK is running on port 1234
-       // config.sessionURL = `ws://${location.hostname}:1234/ws`;
+        //config.sessionURL = `ws://${location.hostname}:1234/ws`;
         config.sessionURL="wss://${location.hostname}:443/proxy?sessionId=${id}&path=ws";
         // config.sessionURL = `ws://192.168.1.49:1234/ws`;
         //  config.sessionURL = `ws://visivo-server.oact.inaf.it:1234/ws`;
@@ -473,6 +476,41 @@ export default {
               
       }
     },
+    
+    WS_CHANGEOPACITY({ state }, param) {
+      if (state.client) {
+        
+        state.client.getRemote().VLWBase.changeOpacity(param);
+                
+              
+      }
+    },
+    WS_CHANGEPALETTE({ state }, param) {
+      if (state.client) {
+        
+        state.client.getRemote().VLWBase.changePalette(param);
+                
+              
+      }
+    },
+    
+    WS_CHANGESELECTED({ state }, param) {
+      if (state.client) {
+        
+        state.client.getRemote().VLWBase.changeSelected(param);
+                
+              
+      }
+    },
+    
+    WS_CHANGEVISIBILITY({ state }, param) {
+      if (state.client) {
+        
+        state.client.getRemote().VLWBase.changeVisibility(param);
+                
+              
+      }
+    },
    
     
     WS_UPDATE_XMLFITS({ state }, res) {
@@ -495,17 +533,14 @@ export default {
             //also https://codepen.io/isogunro/pen/VQRoax
           }).then(
               function() {
-                //TODO: load datacube data
-                state.client.getRemote().VLWBase.getDataCubeData().then((result) => {
-                  state.dc_params = result;
-                  //alert(state.dc_params[3]);
-                
-                  return state.dc_params;
-                  //https://stackoverflow.com/questions/59699813/vuetify-data-table-and-binding-data-coming-from-json-object - get a table from json
-                  //also https://codepen.io/isogunro/pen/VQRoax
+                //TODO: load name
+                //ret
+                state.client.getRemote().VLWBase.getInfo().then((result) => {
+                   state.imageDesc = result;// '[ {"name":"folder", "path":"some path", "children": [ {"name": "2.fits" } ] }, {"name":"Test.fits", "path":"blah a"} ]';// "{\n path: '/home/evgeniya/Documents/GitHub/files', \n name: 'files',\n type: 'directory' \n}";
+                  console.log (result)
+                  return result;
                 })
-               // state.client.getRemote().VLWBase.updateResolution(5);
-               //   return alert("Done");
+             
               }
             
           )
