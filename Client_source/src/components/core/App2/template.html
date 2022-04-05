@@ -1,11 +1,11 @@
 
-<v-app>
+<v-app >
 
 
 
 
   <v-app-bar app shrink-on-scroll height="60" align="center"
-      justify="center">
+      justify="center" v-on:click="overlay=false">
 <v-layout row wrap align-center justify-center>
 <v-btn
            color="primary"
@@ -16,11 +16,13 @@
          </v-btn>
 <v-spacer />
 
+    
 
-<div>{{mes}}</div>
+ 
 
-  
-</a>
+
+<v-spacer />
+
 <v-btn v-model="toggle_cam"
            color="primary"
            text
@@ -168,169 +170,33 @@
 
 
 
-<v-progress-circular :active="busy" :indeterminate="busy" absolute bottom />
-
-
+<v-progress-linear :active="busy" :indeterminate="busy" absolute bottom height="10" striped>
+  <div style="color:White; font-size: 8px;">
+{{ mes }}
+  </div>
+</v-progress-linear>
+ 
   </v-layout>
   </v-app-bar>
 
-<v-navigation-drawer
-v-model="drawer"
-:mini-variant.sync="mini"
-    :hide-overlay="true"
-    :disable-resize-watcher="false"
-    mini-variant-width="45"
-    permanent
-           app :width="350">
-           <v-divider></v-divider>
-        <v-container fluid align="center" >
-            <v-list>
-           <v-list-item >
-
-           <v-list-item-title>VLKB</v-list-item-title>
-           <v-btn style="margin: 5px; padding: 12px;"
-
-                                   icon
-                                   @click.stop="mini = !mini"
-                                 >
-                                   <v-icon>mdi-chevron-left</v-icon>
-                                 </v-btn>
-           </v-list-item>
-           <v-list-item>
-                   <v-list-item-icon>
-                     <v-icon >
-                       mdi-database-search
-                     </v-icon>
-                   </v-list-item-icon>
-
-                   <v-list-item-content>
-                     <v-list-item-title>Coordinates</v-list-item-title>
-
-                         <v-text-field
-                           label="glon"
-                           :value="p1"
-                            type="number"
-                            max='360'
-                            min='0'
-                            @input="setP1"
-                     ></v-text-field>
-
-                         <v-text-field
-                           label="glat"
-                           :value="p2"
-                           type="number"
-                           max='90'
-                           min='-90'
-                           @input="setP2"
-
-                         ></v-text-field>
-                     <v-row align="right" >
 
 
-
-                       <v-col>
-                         <v-text-field
-                           label="radius"
-                           :value="r1"
-                           type="number"
-                           max='4'
-                           min='0'
-                           @input="setR1"
-
-                         ></v-text-field>
-                       </v-col>
-                       <v-col >
-                         <v-text-field
-                           label="dl"
-                           :value="dl"
-                           type="number"
-                           max='4'
-                           min='0'
-                           @input="setDl"
-
-                         ></v-text-field>
-                       </v-col>
-
-                      <v-col >
-                           <v-text-field
-                             label="db"
-                             :value="db"
-                             type="number"
-                             max='4'
-                             min='0'
-                             @input="setDb"
-
-                           ></v-text-field>
-                         </v-col>
-
-                     </v-row>
-                     <button v-on:click="getData">Query</button>
-
-                   </v-list-item-content>
-                 </v-list-item>
-
-                 <v-list-item>
-                                   <v-list-item-icon>
-                                     <v-icon >
-                                       mdi-magnify
-                                     </v-icon>
-                                   </v-list-item-icon>
-
-                                   <v-list-item-content>
-
-
-                                             <v-text-field
-                                              label="Search"
-                                               single-line
-                                               hide-details
-                                               v-model="search"
-                                             ></v-text-field>
-                                           </v-card-title>
-                                           <v-data-table
-                                             :headers="headers"
-                                             :items="JSON.parse(out_json)"
-                                             :search="search"
-
-                                              @click:row="onButtonClick"
-                                           >
-                                             <template slot="items" slot-scope="props">
-                                               <td class="text-xs-right">{{ props.item.survey }}</td>
-                                               <td class="text-xs-right" ><a :href="props.item.url"> {{ props.item.overlap }}</a></td>
-
-
-
-                                             </template>
-                                             <v-alert slot="no-results" :value="true" color="error" icon="warning">
-                                               Your search for "{{ search }}" found no results.
-                                             </v-alert>
-                                           </v-data-table>
-
-
-
-                                   </v-list-item-content>
-                                  </v-list-item>
-               </v-list>
-
-
-
-
-
-
-
-           <v-row align="left"
-               justify="center">
-               <v-col>
-
-           </v-col>
-           </v-row>
-
-           </v-container>
-     </v-navigation-drawer>
+  
 
 
   <v-main :class="$style.appContent">
 
-    <div style="position: relative; width: 100%; height: 100%">
+    <div style="position: relative; width: 100%; height: 100%" v-on:click="overlay=false">
+     
+      <v-overlay :absolute="absolute" :opacity="opacity" :value="busy"  >
+         <v-container >
+                 <v-layout row justify-center align-center>
+                   <v-progress-circular :active="busy" :indeterminate="busy":size="70" :width="7" color="blue">
+                     {{ mes }}
+                   </v-progress-circular>
+                 </v-layout>
+               </v-container>
+      </v-overlay>
       <remote-rendering-view :client="client" />
     </div>
   </v-main>

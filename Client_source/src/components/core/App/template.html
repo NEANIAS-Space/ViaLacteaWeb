@@ -17,90 +17,15 @@
 <v-spacer />
 
 
-<v-btn v-model="toggle_cam"
-           color="primary"
-           text
-           @click="setCameraView"
-         >
-           Reset Camera
-         </v-btn>
 
 
 
 
 
-<v-container style="width: 22%">
-<div class="d-none d-md-block" style="margin: 5px; padding: 0px;">
-  <v-slider
- :label="ex1.label"
- thumb-label="always"
- hide-details
- :value="resolution"
- :max="params[1]"
- :min="params[0]"
- :step="0.1"
- @input="setResolution"
-/>
- </div>
-
- <div class="d-md-none">
-
-         <v-text-field style="margin: 0px; padding: 0px; width: 60px"
-                 label="Threshold"
-                 type="number"
-                 :value="resolution"
-                 :max="params[0]"
-                 :min="params[1]"
-                 :step="0.1"
-                 @input="setResolution"
-               />
 
 
 
-    </div>
- </v-container>
 
-
-
-<v-container style="width: 22%">
-   <div class="d-none d-md-block" style="margin: 5px; padding: 0px;">
-     <v-slider
-   :label="ex2.label"
-   thumb-label="always"
-   hide-details
-   :value="planes"
-   :max="params[3]"
-   :min="params[2]"
-   :step="1"
-   @input="setPlanes"
-  >
-
-
-    </v-slider>
-   </div>
-
-<div class="d-md-none">
-
-
-        <v-text-field style="margin: 0px; padding: 0px; width: 60px" class="' text-caption text-sm-body-2 text-md-body-1 text-lg-h6'"
-                label="Cut planes"
-                type="number"
-                :value="planes"
-                :max="params[3]"
-                :min="params[2]"
-                :step="1"
-                @input="setPlanes"
-              />
-
-
-
-   </div>
-
-</v-container>
-
-<v-switch class="v-input--reverse" v-model="contours" v-on:change="setContours" label="Use contours" >
-
-       </v-switch>
 
 
 <!--Settings-->
@@ -203,7 +128,68 @@ v-model="drawer"
                    </v-list-item-icon>
 
                    <v-list-item-content>
+                     <template>
+                                                            <v-row justify="space-around">
+                                                              <v-col cols="auto">
+                                                                <v-dialog v-model="lfDialog"
+                                                                  transition="dialog-bottom-transition"
+                                                                  max-width="600"
+                                                                >
+                                                                  <template v-slot:activator="{ on, attrs }">
+                                                                    <v-btn
+                                                                      color="primary"
+                                                                      v-bind="attrs"
+                                                                      v-on="on"
+                                                                    >Load local</v-btn>
+                                                                  </template>
+                                                                  <template v-slot:default="dialog">
+                                                                    <v-card>
+                                                                      <v-toolbar
+                                                                        color="primary"
+                                                                        dark
+                                                                      >Datacubes available</v-toolbar>
+                                                                      <v-card-text>
+                                                                        
+                                                                        
+                                                                        <v-treeview
+                                                                          :active.sync="active"
+                                                                          :items="JSON.parse(out_files)"
+                                                                          :open.sync="open"
+                                                                          dense
+                                                                          open-on-click
+                                                                          return-object >
+                                                                          <template v-slot:prepend="{ item }">
+                                                                            <v-icon v-if="!item.children" @click="loadFile(item)">
+                                                                              mdi-file-outline
+                                                                            </v-icon>
+                                                                            
+                                                                          </template>
+                                                                          
+                                                                          
+                                                                          
+                                                                        </v-treeview>
+                                                                       
+                                                                       </v-card-text>
+                                                                      <v-card-actions class="justify-end">
+                                                                        <v-btn
+                                                                          text
+                                                                          @click="dialog.value = false"
+                                                                        >Close</v-btn>
+                                                                      </v-card-actions>
+                                                                    </v-card>
+                                                                  </template>
+                                                                </v-dialog>
+                                                              </v-col>
+                                                              </v-row>
+                                                            
+                                                            </template>
+                                       
+                     
                      <v-list-item-title>Coordinates</v-list-item-title>
+                     
+                    
+                     
+                    
 
                          <v-text-field
                            label="glon"
@@ -327,6 +313,7 @@ v-model="drawer"
      </v-navigation-drawer>
 
 
+  
   <v-main :class="$style.appContent">
 
     <div style="position: relative; width: 100%; height: 100%" v-on:click="overlay=false">
@@ -346,6 +333,143 @@ v-model="drawer"
                  </v-layout>
                </v-container>
       </v-overlay>
+      <v-card height="100%">
+        <v-navigation-drawer
+          absolute
+          permanent
+          right
+          width="350px"
+        >
+          <v-list-item >
+          
+                   <v-list-item-content>
+                     <v-list-item-title>Layer stack</v-list-item-title>
+                     
+               
+                     
+                     <v-data-table
+                       :headers="headers2"
+                       :items="images"
+                       v-sortable-data-table
+                       @sorted="saveOrder"
+                       item-key="name">
+                         <template v-slot:top>
+                       
+                       
+                       
+                       <v-dialog
+                         v-model="dialog"
+                         max-width="500px"
+                       >
+                        
+                         <v-card>
+                           <v-card-title>
+                             <span class="text-h5">Layer settings</span>
+                              
+                           </v-card-title>
+                           <span class="text-h7">{{ editedItem.name }}</span>
+                           <v-card-text>
+                           <v-container>
+                             <v-row>
+                               <v-col
+                                 
+                               >
+                              
+                               
+                             <v-slider
+                             thumb-label="always"
+                             v-model="imOpacity"
+                             label="Opacity"
+                             hide-details
+                             :value="editedItem.opacity"
+                             min="0"
+                             max="100"
+                             step="5"
+                             @input="setOpacity" 
+                             
+                             >
+                             
+                             
+                               </v-slider>
+                               <v-switch
+                                label="Scale Linear"
+                                 v-model="paletteScaleLog"
+                                 @click="setPaletteScale"
+                               />
+                               
+                               <v-select
+                                 :items="palettes"
+                                 v-model="imPalette"
+                                 label="Palettes"
+                                 @input="setPalette" 
+                               ></v-select>
+                               
+                               
+                               </v-col>
+                                       </v-row>
+                                     </v-container>
+                                   </v-card-text>
+                               
+                                   <v-card-actions>
+                                     <v-spacer></v-spacer>
+                                     <v-btn
+                                       color="blue darken-1"
+                                       text
+                                       @click="close"
+                                     >
+                                       Close
+                                     </v-btn>
+                                     
+                                   </v-card-actions>
+                                 </v-card>
+                               </v-dialog>
+                           </template>
+                       
+                      <template v-slot:item.name="{ item }">
+                        
+
+                      <v-icon v-if="item.selected"
+                       color="blue darken-2"
+                       >
+                       mdi-select
+                       </v-icon>
+                       <v-icon v-if="!item.selected"
+                       @click="setSelectionOn(item)"
+                       >
+                                              mdi-select-off
+                                              </v-icon>
+
+
+
+                        <v-icon
+                          small
+                         @click="editItem(item)"
+                       
+                        >
+                          mdi-pencil
+                        </v-icon>
+                        <v-icon v-if="item.visibility"
+                        @click="setVisibilityOff(item)"
+                        >
+                        mdi-eye
+                        </v-icon>
+                        <v-icon v-if="!item.visibility"
+                        @click="setVisibilityOn(item)"
+                        >
+                                               mdi-eye-off
+                                               </v-icon>
+                        {{item.name}}
+                       
+                      </template>
+                           
+                     </v-data-table>
+                    
+      
+                   </v-list-item-content>
+                 </v-list-item>
+                
+          </v-navigation-drawer>
+      </v-card>
       <remote-rendering-view :client="client" />
     </div>
   </v-main>

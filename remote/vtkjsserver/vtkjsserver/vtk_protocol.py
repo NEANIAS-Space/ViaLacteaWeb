@@ -1,5 +1,6 @@
 import time
 import math 
+import os
 
 from vtk.web import protocols as vtk_protocols
 
@@ -65,12 +66,19 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
         self.useContours=False;
         self.path=""
+        self.sessionID="session_id_test"
         self.token=""
         self.fitsWasRead=False;
         self.istwoD=False;
         self.istwoDLoaded=False;
         self.istreeDLoaded=False;
-        
+        #folder to scan local files
+        self.m_path = '/home/pvw-user/files'
+        #self.m_path = '/home/evgeniya/Documents/GitHub/files'
+        self.m_desc=''
+        self.isTwoDim=False;
+
+
     def updateScene(self, renderer, renWin):
         renderer.ResetCamera();
         renWin.GetInteractor().Render();
@@ -82,9 +90,15 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
         self.Ren2.RemoveActor2D(self.currentContourActor);
     
+        #myParentVtkWindow->m_Ren1->RemoveActor2D(currentContourActorForMainWindow);
+        #myParentVtkWindow->ui->qVTK1->update();
+        #myParentVtkWindow->ui->qVTK1->renderWindow()->GetInteractor()->Render();
+        print("to impleent")
+       
+    
+    def SetSession(self,s):
+        self.sessionID=s;
 
-    
-    
     def goContour(self):
         self.removeContour();
         
@@ -129,11 +143,16 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
 
         self.Ren2.AddActor2D(self.currentContourActor);
+        #self.renderWindow.GetInteractor().Render();
         self.renderWindow.Render()
         print("contours are set");
 
 
-   
+    @exportRpc("vtk.getsession")
+    def getSessionID(self):
+        print("Session is")
+        print(self.sessionID);
+        return self.sessionID;
        
         
     @exportRpc("vtk.initialize.token")
@@ -177,10 +196,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         fitsReader.CalculateRMS();
             
 
-        self.max=fitsReader.GetMax();
-        self.min=fitsReader.GetMin();
-        self.rms=fitsReader.GetRMS();
-        
+        self.max=self.fitsReader.GetMax();
+        self.min=self.fitsReader.GetMin();
+        self.rms=self.fitsReader.GetRMS();
+        print("Max_min read");
         #outline
         outlineF = vtk.vtkOutlineFilter();
         outlineF.SetInputData(fitsReader.GetOutput());
@@ -368,7 +387,83 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.resetCamera();  
 
         return -1; #self.resetCamera()
+
+
+
         
+    @exportRpc("vtk.cone.changeopacity")
+    def changeOpacity(self,res):
+        print ("Opacity Change")  
+        p=res.split(",");
+        objN=int(p[0])
+        opacity=float(p[1])
+        
+        print("object at {:d}, opacity {:d}".format(objN, opacity));
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        slice.SetOpacity(opacity/ 100.0);
+        self.renderWindow.Render()
+        
+    @exportRpc("vtk.cone.changevisibility")
+    def changeVisibility(self,res):
+        print ("Visitility Change")  
+        p=res.split(",");
+        objN=int(p[0])
+        status=bool(p[1])
+        
+        print("object at {:d}, visibility {:d}".format(objN, status));
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        if status:
+          slice.VisibilityOn();
+        else:
+          slice.VisibilityOff();
+          
+        self.renderWindow.Render()            
+        
+    @exportRpc("vtk.cone.changepalette")
+    def changeFitsScale(self,res):
+        #num in imageStack, palette, scale
+        
+        print ("Rescaling image")  
+        p=res.split(",");
+        objN=int(p[0])
+        palete=str(p[1])
+        myscale =str(p[2])
+        #int sourceStart, int sourceEnd,  int destinationRow
+        print("object at {:d}, palette {:s}, scale {:s}".format(objN, palete, myscale));
+        
+        #vtkImageSlice
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        #map=slice.GetMapper();
+        #input=map.GetInput();
+        
+        #min and max of fits should be saved before
+        #min = imgLayerList.at(pos)->getFits()->GetMin();
+        #if (min < 0)
+        #min = 0;
+        #float max = imgLayerList.at(pos)->getFits()->GetMax();
+        
+        lut = vtk.vtkLookupTable();
+        if myscale == "Linear":
+           lut.SetScaleToLinear();
+        else:
+           lut.SetScaleToLog10();
+        
+        #SelectLookTable(palette.c_str(), lut);
+        
+        colors = vtk.vtkImageMapToColors();
+        # We have to store both list of images and imageStack
+        colors.SetInputData(input); #get from stack
+        colors.SetLookupTable(lut);
+        colors.Update();
+
+        imageSliceMapperLutModified =vtk.vtkImageSliceMapper();
+        imageSliceMapperLutModified.SetInputData(colors.GetOutput());
+        
+        slice.SetMapper(imageSliceMapperLutModified);
+        print("Lut was updated")
+
+        
+  
     def init2DPipe(self):
         
         self.setFits2D()
@@ -385,9 +480,10 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.fitsReader2.SetSessionToken(self.token)
         
         
-        self.fitsReader2.is3D=True;
+        self.fitsReader2.is3D=False;
         #fitsReader.GenerateVLKBUrl("40, 0,0.3,0.1");
         self.fitsReader2.SetFileName("../../data/vlkb-merged_3D_2021-02-18_12-36-07_979531_16774-16806.fits");
+        self.fitsReader2.Set3D(False);
         self.fitsReader2.CalculateRMS();
             
 
@@ -402,12 +498,19 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/fce9cd964fa311afdf27353f0b6bc21918e5e603/Code/src/vtkwindow_new.cpp#L1178
         renderer3=self.Ren3;
         
-        rMin=self.fitsReader2.GetRangeSliceMin(0)
-        rMax=self.fitsReader2.GetRangeSliceMax(0)
-        #print(rMin,rMax)
+        min=self.fitsReader.GetMin();
+        max=self.fitsReader.GetMax();
+        delta=0;
+        
+        if min<=0:
+          delta=1-min;
+          min=1
+          max=max+delta;
+          
         resultScale = vtk.vtkImageShiftScale();
-        resultScale.SetOutputScalarTypeToUnsignedChar();
-        resultScale.SetInputData( self.fitsReader2.GetOutput() );
+        resultScale.SetShift(delta)
+        resultScale.SetOutputScalarTypeToFloat();
+        resultScale.SetInputData( self.fitsReader.GetOutput() );
 
         resultScale.Update();
 
@@ -416,21 +519,23 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
         
         
-        lut = vtk.vtkLookupTable();
-        lut.SetTableRange(rMin,rMax) 
-        lut.SetHueRange (0., 0.);
-        lut.SetSaturationRange (0., 0.);
-        lut.SetValueRange(0., 1.);
-        #lut.SetScaleToLog10()
+        lut = self.fitsReader.CreateLookTable("Gray");
+        lut.SetTableRange( min, max );
+        lut.SetScaleToLog10()
         
         lut.Build()
-        
+        print("Lut was build")
         #SelectLookTable("Gray",lut);
         #imageObject->setLutScale("Log");
         #imageObject->setLutType("Gray");
         
+        fits=resultScale.GetOutput();
+        self.fits_list=[fits];
+        self.min_max=[[min,max,delta]]
+        print("Fits list")
+        
         colors =  vtk.vtkImageMapToColors();
-        colors.SetInputData(self.fitsReader2.GetOutput());
+        colors.SetInputData(resultScale.GetOutput());
         colors.SetLookupTable(lut);
         colors.Update();
         
@@ -451,16 +556,16 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #print("12")
 
         # Stack
-        imageStack = vtk.vtkImageStack();
-        imageStack.AddImage(imageSliceBase);
+        self.imageStack = vtk.vtkImageStack();
+        self.imageStack.AddImage(imageSliceBase);
 
 
         self.legendScaleActor3d2 =  vtk.vtkVialactea.vtkLegendScaleActor2();
         self.legendScaleActor3d2.LegendVisibilityOff();
-        self.legendScaleActor3d2.SetFitsFileName(self.fitsReader2.GetFileName());
+        self.legendScaleActor3d2.SetFitsFileName(self.fitsReader.GetFileName());
         print("13")
         renderer3.AddActor(self.legendScaleActor3d2);
-        renderer3.AddViewProp(imageStack);
+        renderer3.AddViewProp(self.imageStack);
         renderer3.ResetCamera();
 
         #addLayer(imageObject);
@@ -469,14 +574,206 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
        
         
         self.renderWindow.Render()
-        print("Done rendein");
+        print("Done rendeing 2D");
+        
+    @exportRpc("vtk.cone.movedlayersrow")           
+    def movedLayersRow(self, res):
+        print ("Moving image")  
+        p=res.split(",");
+        sourceStart=int(p[0])
+        sourceEnd=int(p[1])
+        destinationRow =int(p[2])
+        #int sourceStart, int sourceEnd,  int destinationRow
+        print("sourceStart {:d}, sourceEnd {:d}, destinationRow {:d}".format(sourceStart, sourceEnd, destinationRow));
+        
+        #curl_easy_perform() failed: Couldn't connect to server
+
+    
+   
+        if sourceStart>destinationRow:
+             #down
+             print("Move down ")
+             sliceB=self.imageStack.GetImages().GetItemAsObject(sourceStart);
+             my_sliceB = vtk.vtkImageSlice().SafeDownCast(sliceB)
+             my_sliceB.Modified()
+             
+             for i in range(sourceStart-1,destinationRow-1,-1):
+                
+                slice=self.imageStack.GetImages().GetItemAsObject(i);
+                my_slice = vtk.vtkImageSlice().SafeDownCast(slice)
+                my_slice.Modified()
+                print(my_slice.GetProperty().GetLayerNumber())
+                print(i+1)
+                my_slice.GetProperty().SetLayerNumber(i+1)
+                my_slice.Modified()
+                #base_image.GetProperty().SetLayerNumber(0)
+                #top_image.GetProperty().SetLayerNumber(1)
+                #stack.SetActiveLayer(0)
+                
+                #vtkImageSlice::SafeDownCast(imageStack->GetImages()->GetItemAsObject(i))->GetProperty()->SetLayerNumber(i+1);
+                #imgLayerList.swapItemsAt(i,i+1);
+ 
+             
+             print(my_sliceB.GetProperty().GetLayerNumber())
+             print(destinationRow)
+             my_sliceB.GetProperty().SetLayerNumber(destinationRow)
+             my_sliceB.Modified()
+             #vtkImageSlice::SafeDownCast(imageStack->GetImages()->GetItemAsObject(sourceStart))->GetProperty()->SetLayerNumber(destinationRow);
+
+        else:
+             #up
+             print("Move up")
+             for i in range(sourceStart+1,destinationRow+1,1):
+                print(i)
+                slice=self.imageStack.GetImages().GetItemAsObject(i);
+                my_slice = vtk.vtkImageSlice().SafeDownCast(slice)
+                my_slice.Modified()
+                my_slice.GetProperty().SetLayerNumber(i-1)
+                my_slice.Modified()
+                
+                #vtkImageSlice::SafeDownCast(imageStack->GetImages()->GetItemAsObject(i))->GetProperty()->SetLayerNumber(i-1);
+                #imgLayerList.swapItemsAt(i,i-1);
+
+             sliceB=self.imageStack.GetImages().GetItemAsObject(sourceStart);
+             my_sliceB = vtk.vtkImageSlice().SafeDownCast(sliceB)
+             my_sliceB.Modified()
+             my_sliceB.GetProperty().SetLayerNumber(destinationRow)
+             my_sliceB.Modified()
+             print(destinationRow)
+            
+             #vtkImageSlice::SafeDownCast(imageStack->GetImages()->GetItemAsObject(sourceStart))->GetProperty()->SetLayerNumber(destinationRow-1);
+        self.renderWindow.Render()
+        self.getApplication().InvalidateCache(self.renderWindow)
+        self.getApplication().InvokeEvent('UpdateEvent')
+    
+
+
+
+    @exportRpc("vtk.cone.getinfo")   
+    def getInfo(self):
+
+        survey=self.fitsReader.getSurvey()
+        species=self.fitsReader.getSpecies()
+        transition=self.fitsReader.getTransition()
+        desc= survey+" "+species+" "+transition;
+        print(desc);
+        return desc;
+
+
+    @exportRpc("vtk.cone.addlayerimage")   
+    def addLayerImage(self):
+        print ("Adding layer image")
+        print ("Adding layer image")
+        min=self.fitsReader.GetMin();
+        max=self.fitsReader.GetMax();
+        delta=0;
+        
+        if min<=0:
+          delta=1-min;
+          min=1
+          max=max+delta;
+          
+        resultScale = vtk.vtkImageShiftScale();
+        resultScale.SetShift(delta)
+        resultScale.SetOutputScalarTypeToFloat();
+        resultScale.SetInputData( self.fitsReader.GetOutput() )
+        resultScale.Update();
+
+ 
+        lut = self.fitsReader.CreateLookTable("Gray");
+       
+    
+
+        lut.SetTableRange(min,max);
+       
+
+        lut.SetScaleToLog10();
+        print("Lut is set")
+        self.fits_list.append(resultScale.GetOutput())
+        self.min_max.append([min,max,delta])
+        print("Fits is updated")
+        
+        #SelectLookTable("Gray",lut);
+
+
+        #SelectLookTable("Gray",lut);
+        
+       
+        #and etc in   https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/fce9cd964fa311afdf27353f0b6bc21918e5e603/Code/src/vtkwindow_new.cpp#L3742
+        
+        self.fitsReader.ComputeAstroCords(0,0);
+        coord=[0,0,0]; #self.fitsReader.GetCoords()
+        coord[0]=self.fitsReader.GetXCoord()
+        coord[1]=self.fitsReader.GetYCoord()
+
+        print("Coords =",coord[0],coord[1]);
+        scaledPixel=self.fitsReader.GetScaledPixel()
+        print("Scaled Pix = ",scaledPixel);
+        self.fitsReader.GetOutput().SetSpacing(scaledPixel,scaledPixel,1);
+        self.fitsReader.GetOutput().SetOrigin( coord[0],coord[1],0);
+        
+        colors =  vtk.vtkImageMapToColors();
+        colors.SetInputData(resultScale.GetOutput());
+        colors.SetLookupTable(lut);
+        colors.Update();
+
+        imageSliceMapperLayer = vtk.vtkImageSliceMapper();
+        imageSliceMapperLayer.SetInputData(colors.GetOutput());
+
+        imageSliceLayer = vtk.vtkImageSlice();
+        imageSliceLayer.SetMapper(imageSliceMapperLayer);
+        imageSliceLayer.GetProperty().SetOpacity(0.5);
+        imageSliceLayer.GetProperty().SetInterpolationTypeToNearest();
+        
+        angle  = 0;
+
+        x1=coord[0];
+        y1=coord[1];
+
+        self.fitsReader.ComputeAstroCords(0,100);
+        coord[0]=self.fitsReader.GetXCoord()
+        coord[1]=self.fitsReader.GetYCoord()
+
+        if x1!=coord[0]:
+    
+           m = math.fabs((coord[1]-y1)/(coord[0]-x1));
+           angle =1*( 90 - math.atan(m)*180/math.pi);
         
         
+
+    
+        transform = vtk.vtkTransform()
+  
+        bounds=self.fitsReader.GetOutput().GetBounds()
+       
+       
+        # Rotate about the origin point (world coordinates)
+        transform.Translate(bounds[0], bounds[2], bounds[4]);
+        transform.RotateWXYZ(angle, 0, 0, 1);
+        transform.Translate(-bounds[0], -bounds[2], -bounds[4]);
+        imageSliceLayer.SetUserTransform(transform);
+       
+        imageSliceLayer.GetProperty().SetLayerNumber(self.imageStack.GetImages().GetNumberOfItems());
+
+        self.imageStack.AddImage(imageSliceLayer);
+
+        #addLayer(img);
+
+        #if(rectangleActor!=0){
+        # m_Ren1->RemoveActor(rectangleActor);
+        #}
+
+                
         
-    def setRenderersToken(self,token):
+    def setRenderersToken(self,token,t):
         print("start")
         #Get renwin and renderers
         
+        #rends=self.renderWindow.GetRenderers()
+        #it=rends.NewIterator()
+        #renderer = rends.GetItemAsObject(0)
+        #renderer2 = rends.GetItemAsObject(1)	
+        #renderer2.SetBackground(0.21,0.23,0.25);
         
         renderer = vtk.vtkRenderer()
         renderer2 = vtk.vtkRenderer()
@@ -485,23 +782,29 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.Ren2=renderer2;
         self.Ren3=renderer3;
         
-        self.renderWindow.AddRenderer(renderer)
-        self.renderWindow.AddRenderer(renderer2)
+        if t==0:
+           self.renderWindow.AddRenderer(renderer)
+           self.renderWindow.AddRenderer(renderer2)
          
-        renderer.SetViewport(0,0,0.5,1)
-        renderer2.SetViewport(0.5,0,1,1)
-        renderer2.SetBackground(0.21,0.23,0.25);
+           renderer.SetViewport(0,0,0.5,1)
+           renderer2.SetViewport(0.5,0,1,1)
+           renderer2.SetBackground(0.21,0.23,0.25);
         
-         #Entry point to entire vis logic:
-        #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1328
+           #Entry point to entire vis logic:
+           #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1328
         
         
         
-        #First pipeline as described in 
-        #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1386
-        
+           #First pipeline as described in 
+           #https://github.com/NEANIAS-Space/ViaLacteaVisualAnalytics/blob/master/Code/src/vtkwindow_new.cpp#L1386
+        else:
+           self.renderWindow.AddRenderer(renderer3)
+           renderer3.SetBackground(0.21,0.23,0.25);
+           print("2D is set");
+           
         self.token=token;
         print(token);
+        
         
     def setFits(self):
         #fitsReader=self.fitsReader;
@@ -730,12 +1033,275 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         
             
         
+    def scantree(self, path):
+       l=len(os.listdir(path))
+       i=0;
+       for entry in os.scandir(path):
+         if entry.is_dir(follow_symlinks=False):
+            self.m_desc=self.m_desc+'{\n'
+            self.m_desc=self.m_desc+'"path": "';
+            self.m_desc=self.m_desc+path;
+            self.m_desc=self.m_desc+'",\n';
+            self.m_desc=self.m_desc+'"name": "';
+            self.m_desc=self.m_desc+entry.name;
+            self.m_desc=self.m_desc+'",\n';
+            self.m_desc=self.m_desc+'"type": "directory",\n';
+            self.m_desc=self.m_desc+'"children": [\n'
+            yield from self.scantree(entry.path)  
+            self.m_desc=self.m_desc+']\n'
+            i=i+1;
+            if i==l:
+              self.m_desc=self.m_desc+'}\n'
+            else:
+              self.m_desc=self.m_desc+'},\n'
+         else:
+            self.m_desc=self.m_desc+'{\n'
+            self.m_desc=self.m_desc+'"path": "';
+            self.m_desc=self.m_desc+path;
+            self.m_desc=self.m_desc+'",\n'
+            self.m_desc=self.m_desc+'"name": "';
+            self.m_desc=self.m_desc+entry.name;
+            self.m_desc=self.m_desc+'",\n'
+            self.m_desc=self.m_desc+'"type": "file"\n';
+            i=i+1;
+            if i==l:
+              self.m_desc=self.m_desc+'}\n'
+            else:
+              self.m_desc=self.m_desc+'},\n'
+            yield entry
+
+
+    @exportRpc("vtk.image.initialize")
+    def createImageVisualization(self,token):
+        self.isTwoDim=True;
+        
+        renderWindow = self.getView('-1')
+        self.renderWindow=renderWindow;
+
+        interactor = vtk.vtkInteractorStyleImage()
+        self.renderWindow.GetInteractor().SetInteractorStyle(interactor)        
+
+        print("Interactor type2") 
+        name=self.renderWindow.GetInteractor().GetInteractorStyle().GetClassName()
+        print(name)
+        print("Local files scanning")
+        self.m_desc=self.m_desc+'[\n'#{\n'
+        
+        for entry in self.scantree(self.m_path):
+          print(entry)
+        self.m_desc=self.m_desc+']\n'
+        
+        print (self.m_desc)
+
+
+        # Set Renderers and Token
+        print("Setting 2D ")
+        self.setRenderersToken(token,1);
+        #self.setFits();
+        
+        if self.fitsWasRead:
+          self.Set2DPipeWindowActors();
+          #self.SetLeftWindowActors();
+          #self.SetRightWindowActors();
+        
+      
+        self.Ren3.ResetCamera()
+          
+  
+        
+        self.renderWindow.Render()
+        
+        self.istreeDLoaded=True;
+        print("2D rendered");
+        return self.m_desc; #-1; #self.resetCamera()
+ 
+    def createImageStack(self):
+        #self.setFits();
+        
+        self.Set2DPipeWindowActors()
+        
+        
+        self.renderWindow.Render()
+        
+        
+        self.fitsWasRead=True;
+
+
+    @exportRpc("vtk.cone.changepalette")
+    def changePalette(self,res):
+        #num in imageStack, palette, scale
+        
+        print ("Rescaling image")  
+        p=res.split(",");
+        objN=int(p[0])
+        objId=int(p[1])
+        palete=str(p[2])
+        myscale =str(p[3])
+        #int sourceStart, int sourceEnd,  int destinationRow
+        print("object at {:d}, num {:d}, palette {:s}, scale {:s}".format(objN, objId, palete, myscale));
+        
+        #vtkImageSlice
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        my_slice = vtk.vtkImageSlice().SafeDownCast(slice)
+        my_slice.Modified()
+        #map=slice.GetMapper();
+        input=self.fits_list[objId]
+        m_r=self.min_max[objId];#.append([min,max,delta])
+        
+        #min and max of fits should be saved before
+        #min = imgLayerList.at(pos)->getFits()->GetMin();
+        #if (min < 0)
+        #min = 0;
+        #float max = imgLayerList.at(pos)->getFits()->GetMax();
+        
+ 
+        lut = self.fitsReader.CreateLookTable(palete);
+        lut.SetTableRange(m_r[0],m_r[1]);
+       
+        if myscale == "Linear":
+           lut.SetScaleToLinear();
+        else:
+           lut.SetScaleToLog10();
+        
+        print("Lut updated")
+        #SelectLookTable(palette.c_str(), lut);
+        
+        colors = vtk.vtkImageMapToColors();
+        # We have to store both list of images and imageStack
+        colors.SetInputData(input); #get from stack
+        colors.SetLookupTable(lut);
+        colors.Update();
+        
+        print("Fits updated")
+    
+        imageSliceMapperLutModified =vtk.vtkImageSliceMapper();
+        imageSliceMapperLutModified.SetInputData(colors.GetOutput());
+        
+        my_slice.SetMapper(imageSliceMapperLutModified);
+        my_slice.Modified()
+        print("Palette applied")
+        self.renderWindow.Render()
+        self.getApplication().InvalidateCache(self.renderWindow)
+        self.getApplication().InvokeEvent('UpdateEvent')  
+
+
+                           
+    
+    @exportRpc("vtk.cone.changeopacity")
+    def changeOpacity(self,res):
+        print ("Opacity Change2")  
+        p=res.split(",");
+        objN=int(p[0])
+        opacity=float(p[1])
+        
+        print("object at {:d},".format(objN));
+        print(opacity)
+        
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        my_slice = vtk.vtkImageSlice().SafeDownCast(slice)
+        #my_slice.ShallowCopy(slice)
+        my_slice.Modified()
+        my_slice.GetProperty().SetOpacity(opacity/ 100.0);
+        my_slice.Modified()
+        self.renderWindow.Render()
+        self.getApplication().InvalidateCache(self.renderWindow)
+        self.getApplication().InvokeEvent('UpdateEvent')           
+        
+        
+    @exportRpc("vtk.cone.changevisibility")
+    def changeVisibility(self,res):
+        print ("Visitility Change")  
+        p=res.split(",");
+        objN=int(p[0]) #hack - change later
+        status=(p[1])
+        
+        print("object at {:d}, visibility {:s}".format(objN, status));
+        slice=self.imageStack.GetImages().GetItemAsObject(objN);
+        my_slice = vtk.vtkImageSlice().SafeDownCast(slice)
+        #my_slice.ShallowCopy(slice)
+        my_slice.Modified()
+        #help(my_slice)
+        if status=="true":
+          
+          my_slice.VisibilityOn();
+        else:
+          my_slice.VisibilityOff();
+          
+        self.renderWindow.Render() 
+        self.getApplication().InvalidateCache(self.renderWindow)
+        self.getApplication().InvokeEvent('UpdateEvent')  
+
+ 
+    @exportRpc("vtk.cone.load.image")
+    def loadImage(self,url):
+
+        print ("Load 2D image")
+        if self.fitsWasRead==False: #not loaded as far
+           #uncoment for multiuser
+           self.fitsReader.SetTempPath(self.path)
+           self.fitsReader.SetSessionToken(self.token)
+           print("Token was reset")
+        #loading 2D image
+        self.fitsReader2.is3D=False;
+        print("Start downloading from");
+        print(url)
+        self.fitsReader.Set3D(False);
+        result=self.fitsReader.DownloadSurveyDataCube(url);
+        print("Downloaded");
+        if result:
+             print("stat 2D");
+             self.fitsReader.CalculateRMS();
+             print("success 2D");
+           
+             self.max=self.fitsReader.GetMax();
+             self.min=self.fitsReader.GetMin();
+             self.rms2=self.fitsReader.GetRMS();
+        
+        
+        
+        if self.fitsWasRead==False:
+              #self.createScene3D();
+              self.createImageStack();
+              print("First image was added")
+        else:
+              self.addLayerImage()
+              print("Secondary image was added")
+        #self.textActor.SetInput(self.fitsReader.GetDataCubeData())
+        #self.textActor.Modified();
+        #self.textActor.GetMapper().Update()
+        
+        
+        
+        #fits=self.fitsReader.GetOutput();
+        #bounds=fits.GetBounds()
+        #print("Bounds updated ");
+        #self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
+        #self.frustumSource.Update()
+        
+        #TODO reset camera
+        print("Pos updated ");
+        
+        
+        
+        
+        return result;
+        
     @exportRpc("vtk.initialize")
     def createVisualization(self,token):
         renderWindow = self.getView('-1')
         self.renderWindow=renderWindow;
+        print("Scanning start")
+        self.m_desc=self.m_desc+'[\n'#{\n'
+        
+        for entry in self.scantree(self.m_path):
+          print(entry)
+        self.m_desc=self.m_desc+']\n'
+        
+        print (self.m_desc)
+
+
         # Set Renderers and Token
-        self.setRenderersToken(token);
+        self.setRenderersToken(token,0);
         #self.setFits();
         
         if self.fitsWasRead:
@@ -770,7 +1336,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
           #currently is setted this one
           self.istreeDLoaded=True;
 
-        return -1; #self.resetCamera()
+        return self.m_desc; #-1; #self.resetCamera()
+        
         
 
     def ResetCam():
@@ -786,34 +1353,30 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
     @exportRpc("vtk.cone.fits.update")
     def updateFits(self,url):
-        #if self.fitsWasRead==False: #not loaded as far
-        #   #uncoment for multiuser
-        #   self.fitsReader.SetTempPath(self.path)
-        #   self.fitsReader.SetSessionToken(self.token)
-        
-        #   self.fitsReader.is3D=True;
-           
-           
 
-        print ("check scene")
-        
-        print ("ResetCam")
-        print("stat updating");
+        print ("check scene2")
+        if self.fitsWasRead==False: #not loaded as far
+           #uncoment for multiuser
+           self.fitsReader.SetTempPath(self.path)
+           self.fitsReader.SetSessionToken(self.token)
+
+        self.fitsReader.is3D=True;
+        print("Start downloading from");
+        print(url)
+
         result=self.fitsReader.DownloadSurveyDataCube(url);
         if result:
            print("stat updating2");
+           self.fitsReader.Set3D(True);
            self.fitsReader.CalculateRMS();
            
            self.max=self.fitsReader.GetMax();
            self.min=self.fitsReader.GetMin();
            self.rms=self.fitsReader.GetRMS();
            
-           #update scene
-           #if self.fitsWasRead==False:
-           #   self.createScene3D();
-           
-           
-        
+           #udate scene
+           if self.fitsWasRead==False:
+             self.createScene3D();
            
         
            fits=self.fitsReader.GetOutput();
@@ -828,6 +1391,74 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
            print("Cube loaded")
         #self.ResetCamera()
         return result;
+
+
+    @exportRpc("vtk.cone.fits.localupdate")
+    def updateFitslocal(self,fits):
+           
+
+        print ("check scene2 local")
+        if self.fitsWasRead==False: #not loaded as far
+           #uncoment for multiuser
+           #self.fitsReader.SetTempPath('')
+           self.fitsReader.SetSessionToken(self.token)
+
+        self.fitsReader.is3D=True;
+        print("Start downloading from");
+        print(fits)
+        #result=self.fitsReader.DownloadSurveyDataCube(url);
+        self.fitsReader.SetFileName(fits);
+        #SetFileName("../../data/vlkb-merged_3D_2021-02-18_12-36-07_979531_16774-16806.fits");
+        
+        print("Downloaded");
+        self.fitsReader.Set3D(True);
+        result=self.fitsReader.CalculateRMS();
+           
+        self.max=self.fitsReader.GetMax();
+        self.min=self.fitsReader.GetMin();
+        self.rms=self.fitsReader.GetRMS();
+        print("stat updating2");
+        
+        
+        if self.fitsWasRead==False:
+             self.createScene3D();
+        
+        self.textActor.SetInput(self.fitsReader.GetDataCubeData())
+        self.textActor.Modified();
+        self.textActor.GetMapper().Update()
+        
+        #renderWindow = self.getView('-1')
+        # renderWindow.Modified() # either modified or render
+        #renderer.ResetCamera()
+        #renderWindow.Render()
+        #self.getApplication().InvokeEvent('UpdateEvent')
+        # return self.resetCamera()
+        
+        fits=self.fitsReader.GetOutput();
+        bounds=fits.GetBounds()
+        #print("Bounds updated ");
+        self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
+        self.frustumSource.Update()
+        
+        
+        
+        #TODO reset camera
+        print("Pos updated ");
+        #self.resetCamera()
+        self.Ren1.ResetCamera()
+        camera = self.Ren1.GetActiveCamera()
+        camera.SetViewUp( 0, 1, 0 )
+        self.cam_init_pos=self.Ren1.GetActiveCamera( ).GetPosition();
+        self.cam_init_foc=self.Ren1.GetActiveCamera( ).GetFocalPoint();
+        self.resetCamera();  
+        print("Fits updated");
+        
+        
+        
+        return result;
+
+
+
 
 
     @exportRpc("vtk.camera.reset")
@@ -873,7 +1504,7 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
    
     @exportRpc("vtk.cone.urlfits")
     def loadXMLFITS(self,res):
-        print("FitsReader update call with ");
+        print("2D FitsReader update call with ");
         # str_p=str(p1)+","+str(p2);
         # str_r=str(r1)+","+str(r2);
         print(res);
@@ -890,22 +1521,26 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
            
         self.fitsReader.SetSessionToken(self.token)
 
-        self.fitsReader.is3D=True;
-        print(self.token);
+        self.fitsReader.is3D=False;
+        #print(self.token);
         
         self.fitsReader.GenerateVLKBUrl(res);
-        result= self.fitsReader.CalculateRMS();
-        
-        self.max=fitsReader.GetMax();
-        self.min=fitsReader.GetMin();
-        self.rms=fitsReader.GetRMS();
+        self.fitsReader.Set3D(False);
+        print("VLKB generated and data Computed")
+        self.fitsReader.CalculateRMS();
+        print("VLKB generated and data Computed, RMS calculated")
+        self.max=self.fitsReader.GetMax();
+        self.min=self.fitsReader.GetMin();
+        self.rms=self.fitsReader.GetRMS();
         
         if self.fitsWasRead==False:
-           self.createScene3D();
+           #self.createScene3D();
+           self.createImageStack();
+           print("Image stack was created")
         res_str=self.fitsReader.GetSurveysData();
-        self.textActor.SetInput(self.fitsReader.GetDataCubeData())
-        self.textActor.Modified();
-        self.textActor.GetMapper().Update()
+        #self.textActor.SetInput(self.fitsReader.GetDataCubeData())
+        #self.textActor.Modified();
+        #self.textActor.GetMapper().Update()
         
         #renderWindow = self.getView('-1')
         # renderWindow.Modified() # either modified or render
@@ -914,22 +1549,24 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         #self.getApplication().InvokeEvent('UpdateEvent')
         # return self.resetCamera()
         
-        fits=self.fitsReader.GetOutput();
-        bounds=fits.GetBounds()
+        #fits=self.fitsReader.GetOutput();
+        #bounds=fits.GetBounds()
         #print("Bounds updated ");
-        self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
-        self.frustumSource.Update()
+        #self.sliceE.SetBounds(bounds[0], bounds[1], bounds[2], bounds[3], 0, 1);
+        #self.frustumSource.Update()
         
         #TODO reset camera
         print("Pos updated ");
         #self.resetCamera()
-        self.Ren1.ResetCamera()
-        camera = self.Ren1.GetActiveCamera()
-        camera.SetViewUp( 0, 1, 0 )
-        self.cam_init_pos=self.Ren1.GetActiveCamera( ).GetPosition();
-        self.cam_init_foc=self.Ren1.GetActiveCamera( ).GetFocalPoint();
+        #self.Ren1.ResetCamera()
+        #camera = self.Ren1.GetActiveCamera()
+        #camera.SetViewUp( 0, 1, 0 )
+        #self.cam_init_pos=self.Ren1.GetActiveCamera( ).GetPosition();
+        #self.cam_init_foc=self.Ren1.GetActiveCamera( ).GetFocalPoint();
         print("Bounds updated ");
-        #self.Ren1.Render();
+        #self.Ren3.ResetCamera()
+        #self.Ren3.Render();
+        print("XML fits updated");
         return res_str;
         
     @exportRpc("vtk.cone.loadcubedata")
@@ -938,10 +1575,13 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         tmin=self.fitsReader.GetMin()
         tmax=self.fitsReader.GetMax()
         rms=self.fitsReader.GetRMS()
-        tmin/=rms;
-        tmax/=rms;
+      
         pmin=1
-        pmax=self.fitsReader.GetNaxes(2)
+        pmax=1
+        if self.isTwoDim==False:
+            pmax=self.fitsReader.GetNaxes(2)
+            tmin/=rms;
+            tmax/=rms;
         return [tmin,tmax,1,pmax];
 
 
@@ -1056,6 +1696,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                     #print("Outside screen")
                  if self.x1>-1000000 and self.y1>-1000000 :  #dist>0.0: Second point
                      #self.getApplication().InvokeEvent('StartInteractionEvent')
+                   if self.isTwoDim==False:
+                     
                      if x<0.5:
                  
                         
@@ -1065,8 +1707,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                         #print(x,y)
                         #x,y are normalised from 0 to 1
                         size=self.renderWindow.GetSize();
-                        delta_elevation = self.winScale*20.0 / size[1];
-                        delta_azimuth = self.winScale*40.0 / size[0];
+                        delta_elevation = self.winScale*80.0 / size[1];
+                        delta_azimuth = self.winScale*160.0 / size[0];
                      
                         #dist=math.sqrt((self.x1-x)*(self.x1-x)+(self.y1-y)*(self.y1-y))
                         rxf = dx * delta_azimuth * self.MotionFactor;
@@ -1131,42 +1773,159 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
                              newWindow = 0.01;
                         self.viewer.SetColorWindow(newWindow)
                         self.viewer.SetColorLevel(newLevel);
-                        #self.viewer.Modified()
-                        #self.viewer.Render()
-                        #self.WindowLevelInitial[0]=newWindow;
-                        #self.WindowLevelInitial[1]=newLevel;
-                        
-                        #self.Ren2.Render()
-                        #self.renderWindow.GetInteractor().Render();
-                        #print(newWindow,newLevel);
-
-
-                        
-                     
-                     
-                     #self.renderWindow.Render()
+                      
                      self.renderWindow.Modified()
-                     #print(angle)
-                     #self.getApplication().InvokeEvent('EndInteractionEvent')
+
+
+                        
+                   else: #self.isTwoDim:   
+                     #print("2D window scale")
+                     size=self.renderWindow.GetSize();
+                     delta_y = self.winScale*80.0 / size[1];
+                     delta_x = self.winScale*160.0 / size[0];
+                     window = self.imageStack.GetProperty().GetColorWindow()
+                     level = self.imageStack.GetProperty().GetColorLevel()
+                     dx=(self.x1-x)*delta_x;
+                     dy=(self.y1-y)*delta_y;
+                      
+                     d_w=0.01
+                     if window < 0:
+                         d_w=-0.01
+                     d_l=0.01
+                     if level < 0:
+                         d_l=-0.01
+
+                     if math.fabs(window) > 0.01:
+                         dx = dx * window;
+                     else:
+                         dx = dx * d_w
+                     if math.fabs(level) > 0.01:
+                         dy = dy * level;
+                     else:
+                         dy = dy * d_l;
+                        
+
+                     if window < 0.0:
+                         dx = -1 * dx;
+                     if level < 0.0:
+                         dy = -1 * dy;
+                     newWindow = dx + window;
+                     newLevel = level - dy;
+
+                     if newWindow < 0.01:
+                          newWindow = 0.01;
+                     self.imageStack.GetProperty().SetColorWindow(newWindow)
+                     self.imageStack.GetProperty().SetColorLevel(newLevel);
+                      
+
+                                          
+                     self.renderWindow.Modified()
+                     
                  
                  else:
                     self.getApplication().InvokeEvent('StartInteractionEvent')
                     #print("Start")
                  self.x1=x
                  self.y1=y
+           
              if event['shiftKey']==1:
                  #vtkInteractorStyleImage
                  #https://github.com/Kitware/VTK/blob/master/Interaction/Style/vtkInteractorStyleImage.cxx
-                 print("other")
+                 
+                 angle  = 0;
+                 x=event['x']
+                 y=event['y']
+                 #print("Got rotate call")
+                 #print(dist)
+                 #check if outside of port
+                 if x-0.01<=0.0 or y-0.01<=0.0 or x+0.01>1.0 or y+0.01>1.0:
+                    self.getApplication().InvokeEvent('EndInteractionEvent')
+                    self.x1=-1000000
+                    self.y1=-1000000   
+                    #print("Outside screen")
+                 if self.x1>-1000000 and self.y1>-1000000 :  #dist>0.0: Second point
+                     #self.getApplication().InvokeEvent('StartInteractionEvent')
+                     print("pan")
+                     camera = self.renderWindow.GetRenderers().GetFirstRenderer().GetActiveCamera()
+                     viewFocus=camera.GetFocalPoint();
+                     print(viewFocus[0],viewFocus[1],viewFocus[2])
+                     viewFocus=self.ComputeWorldToDisplay(viewFocus[0], viewFocus[1], viewFocus[2]);
+                     focalDepth = viewFocus[2];
+                     print(viewFocus[0],viewFocus[1],viewFocus[2])
+                     newPickPoint=self.ComputeDisplayToWorld(x,y,focalDepth);
+                     print(newPickPoint[0],newPickPoint[1],newPickPoint[2])
+
+                     # Has to recalc old mouse point since the viewport has moved,
+                     # so can't move it outside the loop
+
+                     oldPickPoint=self.ComputeDisplayToWorld(self.x1,self.y1,focalDepth)
+                     
+                     #Camera motion is reversed
+                     
+                        
+                     motionVector=[0,0,0]
+                     motionVector[0] = self.winScale*(oldPickPoint[0] - newPickPoint[0]);
+                     motionVector[1] = self.winScale*(oldPickPoint[1] - newPickPoint[1]);
+                     motionVector[2] = self.winScale*(oldPickPoint[2] - newPickPoint[2]);
+                     print("Motion ",motionVector[0],motionVector[1],motionVector[2])
+
+                     viewFocus=camera.GetFocalPoint();
+                     viewPoint=camera.GetPosition();
+                     camera.SetFocalPoint(motionVector[0] + viewFocus[0], motionVector[1] + viewFocus[1], motionVector[2] + viewFocus[2]);
+
+                     camera.SetPosition(motionVector[0] + viewPoint[0], motionVector[1] + viewPoint[1], motionVector[2] + viewPoint[2]);
+                     self.renderWindow.Modified()
+                     self.getApplication().InvalidateCache(self.renderWindow)
+                     self.getApplication().InvokeEvent('UpdateEvent')
+                     print("Panning done")
+                 else:
+                    self.getApplication().InvokeEvent('StartInteractionEvent')
+                    #print("Start")
+                 self.x1=x
+                 self.y1=y
+
+         
+
          
          if event['action']=='up': #end of interaction
              self.x1=-1000000
              self.y1=-1000000   
              self.getApplication().InvokeEvent('EndInteractionEvent') 
              #print("End") 
+
+
+    def ComputeWorldToDisplay(self,x,y,z):
+       renderer=self.renderWindow.GetRenderers().GetFirstRenderer()
+       renderer.SetWorldPoint(x, y, z, 1.0);
+       renderer.WorldToDisplay();
+       displayPt=renderer.GetDisplayPoint();
+       return displayPt;
+       
+    def ComputeDisplayToWorld(self,x, y, z):
+       renderer=self.renderWindow.GetRenderers().GetFirstRenderer()
+       renderer.SetDisplayPoint(x, y, z);
+       renderer.DisplayToWorld();
+     
+       worldPt=renderer.GetWorldPoint();
+       pt=[0.0,0.0,0.0,0.0]
+       if worldPt[3]!=0:
+         
+          pt[0]= float(worldPt[0])/float(worldPt[3])
+         
+          pt[1]= worldPt[1]/worldPt[3]
+          pt[2]= worldPt[2]/worldPt[3]
+          
+          pt[3] = 1.0;
+        
+       return pt;
+       
+    @exportRpc("vtk.cone.changeselected")
+    def changeSelected(self, res):
+       print("Active layer ",res);
+       self.imageStack.SetActiveLayer(int(res));
+       self.renderWindow.Render();                 
                  
-                 
-             
+                
            
     @exportRpc("vtk.cone.camview.update")
     def updateCamView(self, v):
@@ -1267,7 +2026,9 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
 
     @exportRpc("viewport.gesture")
     def updateGesture(self, event):
-             
+      if self.isTwoDim==True:
+        print("Default 2D interaction");
+        return;       
       if 'StartPinch' in event["type"]:
         self.getApplication().InvokeEvent('StartInteractionEvent')
         renderWindow = self.getView(event['view'])

@@ -10,6 +10,7 @@
 #include "vtkAlgorithm.h"
 #include "vtkFloatArray.h"
 #include "vtkStructuredPoints.h"
+#include "luthelper.h"
 
 extern "C" {
 #include "fitsio.h"
@@ -25,6 +26,14 @@ public:
     vtkFitsReader();
     ~vtkFitsReader();
 
+     //For Lut access
+    vtkLookupTable * CreateLookTable(std::string palette){
+        vtkLookupTable *lut=vtkLookupTable::New();
+        //std::cout<< "Selecting table"<<std::endl;
+        lut::SelectLookTable(palette,lut);
+        return lut;
+    };
+
     //For downloading and parcing files
 
     void SetSessionToken(std::string token)
@@ -35,7 +44,12 @@ public:
     bool LogOut();
     void SetRefreshToken(std::string t){m_refreshToken=t;};
 
- 
+    void ComputeAstroCords(float inp1, float inp2) ;
+    double *GetCoords(){return &coord[0];};
+    double GetXCoord(){return coord[0];};
+    double GetYCoord(){return coord[1];};
+    double GetScaledPixel(){return this->scaledPixel;};
+
     bool GenerateVLKBUrl(std::string data);
     bool DownloadSurveyDataCube(std::string urlString);
 
@@ -54,6 +68,7 @@ public:
     double getInitSlice() { return initSlice; }
 
     bool is3D;
+    void Set3D(bool s){is3D=s;};
     void CalculateRMS();
     void SetTempPath(std::string path)
     {
@@ -129,6 +144,10 @@ protected:
     std::string cut;
 
     std::string m_dataCubeDesc;
+    
+    double sky_coord_gal[2];
+    double coord[3];
+    double scaledPixel;
 
     float datamin;
     float datamax;

@@ -2,9 +2,12 @@
 export default function createMethods(session) {
   return {
     createVisualization: (token) => session.call('vtk.initialize', [token]),
+    createImageVisualization: (token) => session.call('vtk.image.initialize', [token]),
     logOut:(rtoken) => session.call("vtk.initialize.logout", [rtoken]),
     loadURL: () => session.call('vtk.cone.url', []),
     resetCamera: () => session.call('vtk.camera.reset', []),
+    getInfo: () => session.call('vtk.cone.getinfo', []),
+    getSessionID: () => session.call('vtk.getsession', []),
     updateResolution: (resolution) =>
       session.call('vtk.cone.resolution.update', [resolution]),
     updatePlanes: (planes) =>
@@ -14,17 +17,29 @@ export default function createMethods(session) {
     
     updateFits: (url) =>
       session.call('vtk.cone.fits.update', [url]),
+    changeVisibility: (res) =>
+    session.call('vtk.cone.changevisibility', [res]),
+    changeSelected: (res) =>
+    session.call('vtk.cone.changeselected', [res]),
+    changeOpacity: (res) =>
+    session.call('vtk.cone.changeopacity', [res]),
+    changePalette: (res) =>
+    session.call('vtk.cone.changepalette', [res]),
+    updateFitslocal: (fits) =>
+    session.call('vtk.cone.fits.localupdate', [fits]),
     updateCamView: (v) =>
       session.call('vtk.cone.camview.update', [v]),
     updateRotateAxis: (v) =>
       session.call('vtk.cone.rotate.update', [v]),
-      
+   loadImage:(url) =>
+      session.call('vtk.cone.load.image', [url]),
     updateDim: (v) =>
       session.call('vtk.cone.dim.update', [v]),
       
     loadXMLFITS: (res) =>
                  session.call('vtk.cone.urlfits', [res]),
-                 
+    movedLayersRow: (res) =>
+                 session.call('vtk.cone.movedlayersrow', [res]),            
     getDataCubeData:() => session.call('vtk.cone.loadcubedata', []),
     
     setToken: (t) =>

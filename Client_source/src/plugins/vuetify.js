@@ -8,4 +8,8 @@ Vue.use(Vuetify, {
 
 export default new Vuetify({
   // Config for icons
+user:
+  {
+    id: "Test id",
+  }
 });
