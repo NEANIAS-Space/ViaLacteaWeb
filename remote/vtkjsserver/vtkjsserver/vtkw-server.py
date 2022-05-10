@@ -78,9 +78,9 @@ class _Server(vtk_wslink.ServerProtocol):
         
         self.vlw_app=vlwBase()
         self.registerVtkWebProtocol(self.vlw_app)
-        path_val=str(args.updir)+str(args.session);
-        os.mkdir(path_val)
-        self.vlw_app.SetPath(path_val);
+        #path_val=str(args.updir)+str(args.session);
+        #os.mkdir(path_val)
+        #self.vlw_app.SetPath(path_val);
 
         # tell the C++ web app to use no encoding.
 
@@ -94,14 +94,13 @@ class _Server(vtk_wslink.ServerProtocol):
         if not _Server.view:
             renderer = vtk.vtkRenderer()
             renderer2 = vtk.vtkRenderer()
-            #renderer2.SetBackground(1.0,1.0,1.0)
-            #renderer.SetBackground(0.0,0.0,0.0)
+            
             renderWindow = vtk.vtkRenderWindow()
             #renderWindow.AddRenderer(renderer)
             #renderWindow.AddRenderer(renderer2)
             
             #renderer.SetViewport(0,0,0.5,1)
-            #renderer2.SetViewport(0.5,0,1,1)
+            # renderer2.SetViewport(0.5,0,1,1)
 
             renderWindowInteractor = vtk.vtkRenderWindowInteractor()
             renderWindowInteractor.SetRenderWindow(renderWindow)
