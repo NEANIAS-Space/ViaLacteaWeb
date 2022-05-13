@@ -73,8 +73,8 @@ class vlwBase(vtk_protocols.vtkWebProtocol):
         self.istwoDLoaded=False;
         self.istreeDLoaded=False;
         #folder to scan local files
-        #self.m_path = '/home/pvw-user/files'
-        self.m_path = '/home/evgeniya/Documents/GitHub/files'
+        self.m_path = '/home/pvw-user/files'
+        #self.m_path = '/home/evgeniya/Documents/GitHub/files'
         self.m_desc=''
         self.imageStack = vtk.vtkImageStack();
         self.isTwoDim=False;
