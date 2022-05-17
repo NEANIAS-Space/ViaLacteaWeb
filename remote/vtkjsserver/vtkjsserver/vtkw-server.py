@@ -84,10 +84,7 @@ class _Server(vtk_wslink.ServerProtocol):
         path_val=str(args.updir)+str(args.session);
         print(path_val)
         os.mkdir(path_val)
-
-
-
-     	self.vlw_app.SetPath(path_val);
+        self.vlw_app.SetPath(path_val);
         self.vlw_app.SetSession(str(args.session));
 
 
