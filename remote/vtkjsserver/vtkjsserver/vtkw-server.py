@@ -76,13 +76,20 @@ class _Server(vtk_wslink.ServerProtocol):
         # vlw API
         #self.registerVtkWebProtocol(vlwBase())
         
+       # vlw API
+        # self.registerVtkWebProtocol(vlwBase())
+
         self.vlw_app=vlwBase()
         self.registerVtkWebProtocol(self.vlw_app)
         path_val=str(args.updir)+str(args.session);
+        print(path_val)
         os.mkdir(path_val)
-        self.vlw_app.SetPath(path_val);
 
-        # tell the C++ web app to use no encoding.
+
+
+     	self.vlw_app.SetPath(path_val);
+        self.vlw_app.SetSession(str(args.session));
+
 
         # tell the C++ web app to use no encoding.
         # ParaViewWebPublishImageDelivery must be set to decode=False to match.
@@ -126,14 +133,17 @@ class _Server(vtk_wslink.ServerProtocol):
 if __name__ == "__main__":
     # Create argument parser
     parser = argparse.ArgumentParser(description="ViaLactea datacube")
-   
 
+    parser.add_argument("--updir", help="directory for temp files",type=str)
+    parser.add_argument("--session", type=str)
     # Add arguments
     server.add_arguments(parser)
     _Server.add_arguments(parser)
     args = parser.parse_args()
-    # print("Directoy to upload");
-    # print(args.upload-directory)
+    print("Directoy to upload");
+
+    print(args.updir)
+    print(args.session)
     
     _Server.configure(args)
 
