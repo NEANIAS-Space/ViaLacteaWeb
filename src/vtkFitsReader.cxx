@@ -176,7 +176,9 @@ bool vtkFitsReader::GenerateVLKBUrl(std::string data) //point,std::string radius
 
     //std::string vlkbUrl="http://ia2-vialactea.oats.inaf.it:8080/libjnifitsdb-1.0.2p/"; //I guess it should be different, with some fille added to it
 
-    std::string vlkbUrl = "http://vlkb.neanias.eu:8080/vlkb-datasets-1.2";
+    // std::string vlkbUrl = "http://vlkb.neanias.eu:8080/vlkb-datasets-1.2";
+    std::string vlkbUrl = "https://vlkb.neanias.eu/vlkb-datasets-1.2";
+
 
     std::string urlString = vlkbUrl + "/vlkb_search?l=" + std::to_string(p[0]) + "&b=" + std::to_string(p[1]); //+"&species="+species;
     /* if(isRadius)
