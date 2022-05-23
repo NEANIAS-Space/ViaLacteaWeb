@@ -122,6 +122,7 @@ class _Server(vtk_wslink.ServerProtocol):
             print("interactor was set up")
             renderWindowInteractor.EnableRenderOff()
             self.getApplication().GetObjectIdMap().SetActiveObject("VIEW", renderWindow)
+            print("Starting factory");
 
 # =============================================================================
 # Main: Parse args and start serverviewId
