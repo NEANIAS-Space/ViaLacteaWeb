@@ -120,9 +120,10 @@ class _Server(vtk_wslink.ServerProtocol):
             print(name)
             renderWindowInteractor.GetInteractorStyle().AutoAdjustCameraClippingRangeOn();
             print("interactor was set up")
+            print("Starting factory", flush=True)
             renderWindowInteractor.EnableRenderOff()
             self.getApplication().GetObjectIdMap().SetActiveObject("VIEW", renderWindow)
-            print("Starting factory");
+            print("Starting factory", flush=True)
 
 # =============================================================================
 # Main: Parse args and start serverviewId
